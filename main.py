@@ -1,9 +1,7 @@
 import hashlib
 import secrets
 from datetime import datetime, timedelta
-
 from flask import Flask, render_template, request, redirect, url_for, session
-
 from validator import validate_password_security
 from DB_MANAGMENT import (
     Establish_DB_Connection,
@@ -17,7 +15,6 @@ from DB_MANAGMENT import (
 
 app = Flask(__name__)
 app.secret_key = "REMOVED_SESSION_SECRET"
-
 
 def _get_user_password(conn, email: str):
     cur = conn.cursor()
