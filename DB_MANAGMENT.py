@@ -138,6 +138,33 @@ def AddUserToDB(MYSQL_CONNECTION, fname, lname, email, pwd, dob):
     except mysql.connector.Error as err:
          print(f"Error: {err}")
          return False
-     
 
      
+
+def SaveResetToken(MYSQL_CONNECTION, email, token_sha1, expires_at):
+    cursor = MYSQL_CONNECTION.cursor()
+    cursor.execute("DELETE FROM password_resets WHERE email=%s", (email,))
+    cursor.execute(
+        "INSERT INTO password_resets (email, token_sha1, expires_at) VALUES (%s, %s, %s)",
+        (email, token_sha1, expires_at)
+    )
+    MYSQL_CONNECTION.commit()
+    cursor.close()
+    return True
+
+def GetResetTokenRow(MYSQL_CONNECTION, email):
+    cursor = MYSQL_CONNECTION.cursor(dictionary=True)
+    cursor.execute(
+        "SELECT * FROM password_resets WHERE email=%s ORDER BY created_at DESC LIMIT 1",
+        (email,)
+    )
+    row = cursor.fetchone()
+    cursor.close()
+    return row
+
+def DeleteResetToken(MYSQL_CONNECTION, email):
+    cursor = MYSQL_CONNECTION.cursor()
+    cursor.execute("DELETE FROM password_resets WHERE email=%s", (email,))
+    MYSQL_CONNECTION.commit()
+    cursor.close()
+    return True
