@@ -8,7 +8,7 @@ Visual:
 [] Fields and buttens CSS style
 
 Pages To Add:
-[] Main Screen after login
+[X] Main Screen after login
 [X] Signup page
 [X] Forget password
 [] System page - Customer managment
@@ -25,7 +25,7 @@ Security:
 
 []ליצור מסך “מערכת” (System) ולהוסיף ממנו טופס “הכנסת לקוח חדש” + להציג על המסך את שם הלקוח החדש שהוזן.
 
-[] Add a post‑login Main Screen and redirect to it after successful login.
+[X] Add a post‑login Main Screen and redirect to it after successful login.
 [] Add a System page with “Add Customer” form and show the new customer name.
 [] Add consistent navigation links across all pages.
 [] Protect Main/System/Change Password with session checks.
