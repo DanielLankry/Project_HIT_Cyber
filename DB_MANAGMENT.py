@@ -11,6 +11,7 @@ MYSQL_DB_NAME = os.getenv("MYSQL_DB_NAME")
 
 
 
+# יוצר חיבור למסד הנתונים לפי פרטי הסביבה ומחזיר חיבור פעיל אם הצליח
 def Establish_DB_Connection():
     try:
         MYSQL_CONNECTION = mysql.connector.connect(
@@ -29,7 +30,7 @@ def Establish_DB_Connection():
     except mysql.connector.Error as err:
              print(f"Error: {err}")
 
-
+# סוגר חיבור למסד הנתונים אם הוא פתוח
 def CloseDBConnection(MYSQL_CONNECTION):
     
     try:
@@ -45,6 +46,7 @@ def CloseDBConnection(MYSQL_CONNECTION):
         print(f"Error closing connection: {err}")
         return False
 
+# מדפיס את כל הרשומות מטבלת המשתמשים (מיועד לבדיקה בלבד)
 def printTopRows(MYSQL_CONNECTION):
      try:
           MY_Current_Sesion = MYSQL_CONNECTION.cursor()
@@ -57,7 +59,7 @@ def printTopRows(MYSQL_CONNECTION):
              print(f"Error: {err}")
 
 
-
+# בודק האם קיים משתמש לפי כתובת דואר אלקטרוני ומחזיר אמת או שקר
 def CheckIfUserExists(MYSQL_CONNECTION, email):
     try:
         MY_Current_Session = MYSQL_CONNECTION.cursor()
@@ -79,7 +81,7 @@ def CheckIfUserExists(MYSQL_CONNECTION, email):
         return False
 
 
-
+# מחזיר את כל פרטי המשתמש לפי כתובת דואר אלקטרוני או ריק אם לא נמצא
 def GetUserInfoByMail(MYSQL_CONNECTION, email):
     try:
         MY_Current_Session = MYSQL_CONNECTION.cursor(dictionary=True)
@@ -101,7 +103,7 @@ def GetUserInfoByMail(MYSQL_CONNECTION, email):
         return None
 
 
-
+# מוחק משתמש ממסד הנתונים לפי כתובת דואר אלקטרוני
 def DeleteUser(MYSQL_CONNECTION, email):
     try:
         MY_Current_Session = MYSQL_CONNECTION.cursor()
@@ -125,6 +127,7 @@ def DeleteUser(MYSQL_CONNECTION, email):
     
     
 
+# מוסיף משתמש חדש למסד הנתונים עם הפרטים שנשלחו
 def AddUserToDB(MYSQL_CONNECTION, fname, lname, email, pwd, dob):
     try:
          cursor = MYSQL_CONNECTION.cursor()
@@ -139,7 +142,7 @@ def AddUserToDB(MYSQL_CONNECTION, fname, lname, email, pwd, dob):
          print(f"Error: {err}")
          return False
 
-     
+# מחזיר את הסיסמה של משתמש לפי כתובת דואר אלקטרוני
 def GetUserPassword(MYSQL_CONNECTION, email):
     try:
         cursor = MYSQL_CONNECTION.cursor()
@@ -154,7 +157,7 @@ def GetUserPassword(MYSQL_CONNECTION, email):
         print(f"Error: {err}")
         return None
 
-
+# מעדכן סיסמה של משתמש במסד הנתונים לפי כתובת דואר אלקטרוני
 def UpdateUserPassword(MYSQL_CONNECTION, email, new_password):
     try:
         cursor = MYSQL_CONNECTION.cursor()
@@ -171,6 +174,7 @@ def UpdateUserPassword(MYSQL_CONNECTION, email, new_password):
         return False
 
 
+# שומר קוד איפוס סיסמה עם זמן תפוגה, לאחר מחיקת קוד קודם אם קיים
 def SaveResetToken(MYSQL_CONNECTION, email, token_sha1, expires_at):
     cursor = MYSQL_CONNECTION.cursor()
     cursor.execute("DELETE FROM password_resets WHERE email=%s", (email,))
@@ -182,6 +186,7 @@ def SaveResetToken(MYSQL_CONNECTION, email, token_sha1, expires_at):
     cursor.close()
     return True
 
+# מחזיר את קוד איפוס הסיסמה האחרון של משתמש או ריק אם לא קיים
 def GetResetTokenRow(MYSQL_CONNECTION, email):
     cursor = MYSQL_CONNECTION.cursor(dictionary=True)
     cursor.execute(
@@ -192,6 +197,7 @@ def GetResetTokenRow(MYSQL_CONNECTION, email):
     cursor.close()
     return row
 
+# מוחק קוד איפוס סיסמה של משתמש
 def DeleteResetToken(MYSQL_CONNECTION, email):
     cursor = MYSQL_CONNECTION.cursor()
     cursor.execute("DELETE FROM password_resets WHERE email=%s", (email,))
@@ -199,7 +205,7 @@ def DeleteResetToken(MYSQL_CONNECTION, email):
     cursor.close()
     return True
 
-
+# מוסיף חבילת שירות חדשה למסד הנתונים
 def AddPackage(MYSQL_CONNECTION, name, speed, price, description=None):
     try:
         cursor = MYSQL_CONNECTION.cursor()
@@ -215,7 +221,7 @@ def AddPackage(MYSQL_CONNECTION, name, speed, price, description=None):
         print(f"Error: {err}")
         return False
 
-
+# מחזיר את כל חבילות השירות הקיימות
 def GetPackages(MYSQL_CONNECTION):
     try:
         cursor = MYSQL_CONNECTION.cursor(dictionary=True)
@@ -228,6 +234,7 @@ def GetPackages(MYSQL_CONNECTION):
         return []
 
 
+# הוספת לקוח חדש לטבלת customers
 def AddCustomer(MYSQL_CONNECTION, first_name, last_name, email=None, phone=None):
     try:
         cursor = MYSQL_CONNECTION.cursor()
@@ -244,7 +251,7 @@ def AddCustomer(MYSQL_CONNECTION, first_name, last_name, email=None, phone=None)
         print(f"Error: {err}")
         return False
 
-
+# מחזיר לקוח לפי כתובת דואר אלקטרוני
 def GetCustomerByEmail(MYSQL_CONNECTION, email):
     try:
         cursor = MYSQL_CONNECTION.cursor(dictionary=True)
@@ -256,7 +263,7 @@ def GetCustomerByEmail(MYSQL_CONNECTION, email):
         print(f"Error: {err}")
         return None
 
-
+# מחזיר לקוח לפי מזהה
 def GetCustomerById(MYSQL_CONNECTION, customer_id):
     try:
         cursor = MYSQL_CONNECTION.cursor(dictionary=True)
@@ -268,7 +275,7 @@ def GetCustomerById(MYSQL_CONNECTION, customer_id):
         print(f"Error: {err}")
         return None
 
-
+# מחזיר רשימת כל הלקוחות ממסד הנתונים
 def ListCustomers(MYSQL_CONNECTION):
     try:
         cursor = MYSQL_CONNECTION.cursor(dictionary=True)
@@ -281,6 +288,7 @@ def ListCustomers(MYSQL_CONNECTION):
         return []
 
 
+# עדכון מונה ניסיונות התחברות כושלים
 def IncrementFailedLogin(MYSQL_CONNECTION, email):
     try:
         cursor = MYSQL_CONNECTION.cursor()
@@ -297,7 +305,7 @@ def IncrementFailedLogin(MYSQL_CONNECTION, email):
         print(f"Error: {err}")
         return False
 
-
+# מאפס מונה ניסיונות התחברות כושלים של משתמש
 def ResetFailedLogin(MYSQL_CONNECTION, email):
     try:
         cursor = MYSQL_CONNECTION.cursor()

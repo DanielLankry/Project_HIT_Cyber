@@ -126,3 +126,77 @@ body {
 .auth-footer a:hover {
   text-decoration: underline;
 }
+
+.customers-container {
+  width: 100%;
+  max-width: 960px;
+  padding: 20px;
+}
+
+.customers-box {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+}
+
+.customers-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.customers-header h1 {
+  color: #333;
+  font-size: 26px;
+}
+
+.link-btn {
+  padding: 8px 12px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  text-decoration: none;
+  color: #333;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.link-btn:hover {
+  background: #e6e6e6;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.customers-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.customers-table th,
+.customers-table td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid #e6e6e6;
+}
+
+.customers-table th {
+  background: #f7f7f7;
+  color: #444;
+}
+
+.error-msg {
+  color: #d00000;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.empty-msg {
+  text-align: center;
+  color: #666;
+  padding: 20px 0;
+}
