@@ -168,3 +168,118 @@ def DeleteResetToken(MYSQL_CONNECTION, email):
     MYSQL_CONNECTION.commit()
     cursor.close()
     return True
+
+
+def AddPackage(MYSQL_CONNECTION, name, speed, price, description=None):
+    try:
+        cursor = MYSQL_CONNECTION.cursor()
+        query = (
+            "INSERT INTO comunication_ltd.packages (name, speed, price, description) "
+            "VALUES (%s, %s, %s, %s)"
+        )
+        cursor.execute(query, (name, speed, price, description))
+        MYSQL_CONNECTION.commit()
+        cursor.close()
+        return True
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        return False
+
+
+def GetPackages(MYSQL_CONNECTION):
+    try:
+        cursor = MYSQL_CONNECTION.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM comunication_ltd.packages ORDER BY name")
+        rows = cursor.fetchall()
+        cursor.close()
+        return rows
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        return []
+
+
+def AddCustomer(MYSQL_CONNECTION, first_name, last_name, email=None, phone=None):
+    try:
+        cursor = MYSQL_CONNECTION.cursor()
+        query = (
+            "INSERT INTO comunication_ltd.customers "
+            "(first_name, last_name, email, phone) "
+            "VALUES (%s, %s, %s, %s)"
+        )
+        cursor.execute(query, (first_name, last_name, email, phone))
+        MYSQL_CONNECTION.commit()
+        cursor.close()
+        return True
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        return False
+
+
+def GetCustomerByEmail(MYSQL_CONNECTION, email):
+    try:
+        cursor = MYSQL_CONNECTION.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM comunication_ltd.customers WHERE email=%s", (email,))
+        row = cursor.fetchone()
+        cursor.close()
+        return row
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        return None
+
+
+def GetCustomerById(MYSQL_CONNECTION, customer_id):
+    try:
+        cursor = MYSQL_CONNECTION.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM comunication_ltd.customers WHERE id=%s", (customer_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        return row
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        return None
+
+
+def ListCustomers(MYSQL_CONNECTION):
+    try:
+        cursor = MYSQL_CONNECTION.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM comunication_ltd.customers ORDER BY created_at DESC")
+        rows = cursor.fetchall()
+        cursor.close()
+        return rows
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        return []
+
+
+def IncrementFailedLogin(MYSQL_CONNECTION, email):
+    try:
+        cursor = MYSQL_CONNECTION.cursor()
+        query = (
+            "UPDATE comunication_ltd.users "
+            "SET failed_login_count = failed_login_count + 1, last_login_attempt = NOW() "
+            "WHERE email = %s"
+        )
+        cursor.execute(query, (email,))
+        MYSQL_CONNECTION.commit()
+        cursor.close()
+        return True
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        return False
+
+
+def ResetFailedLogin(MYSQL_CONNECTION, email):
+    try:
+        cursor = MYSQL_CONNECTION.cursor()
+        query = (
+            "UPDATE comunication_ltd.users "
+            "SET failed_login_count = 0, last_login_attempt = NULL "
+            "WHERE email = %s"
+        )
+        cursor.execute(query, (email,))
+        MYSQL_CONNECTION.commit()
+        cursor.close()
+        return True
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        return False
