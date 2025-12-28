@@ -140,6 +140,36 @@ def AddUserToDB(MYSQL_CONNECTION, fname, lname, email, pwd, dob):
          return False
 
      
+def GetUserPassword(MYSQL_CONNECTION, email):
+    try:
+        cursor = MYSQL_CONNECTION.cursor()
+        cursor.execute(
+            "SELECT password FROM comunication_ltd.users WHERE email=%s LIMIT 1",
+            (email,),
+        )
+        row = cursor.fetchone()
+        cursor.close()
+        return row[0] if row else None
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        return None
+
+
+def UpdateUserPassword(MYSQL_CONNECTION, email, new_password):
+    try:
+        cursor = MYSQL_CONNECTION.cursor()
+        cursor.execute(
+            "UPDATE comunication_ltd.users SET password=%s WHERE email=%s",
+            (new_password, email),
+        )
+        MYSQL_CONNECTION.commit()
+        ok = cursor.rowcount > 0
+        cursor.close()
+        return ok
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        return False
+
 
 def SaveResetToken(MYSQL_CONNECTION, email, token_sha1, expires_at):
     cursor = MYSQL_CONNECTION.cursor()
