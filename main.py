@@ -17,7 +17,27 @@ from DB_MANAGMENT import (
     UpdateUserPassword,
 )
 
-app = Flask(__name__)
+# =========================
+# Flask mini tutorial
+# =========================
+
+# Flask(__name__)      -> יוצר את אפליקציית השרת
+# app.secret_key      -> מפתח לחתימה על session (זיהוי משתמש)
+
+# @app.route("שם הפונקציה שרוצים שתפעל")     -> מחבר כתובת לפונקציה - כול שורה כזאת יכולה לבצע קריאה לפונקציה אחת בלבד
+# methods             -> GET = צפייה, POST = שליחת טופס
+
+# request             -> נתוני הבקשה מהמשתמש
+# request.form        -> שדות מטופס POST
+
+# render_template()   -> החזרת HTML
+# session             -> זיכרון זמני למשתמש מחובר
+
+# redirect()          -> מעבר לכתובת אחרת
+# url_for(func_name)  -> יצירת URL לפי שם פונקציה
+
+
+app = Flask(__name__) # יצירת האפליקציה
 app.secret_key = os.urandom(32)  # מפתח סשן אקראי לשמירת משתמש מחובר
 
 
