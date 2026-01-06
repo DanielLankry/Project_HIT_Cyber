@@ -12,6 +12,7 @@ from DB_MANAGMENT import (
     SaveResetToken,
     GetResetTokenRow,
     DeleteResetToken,
+    AddCustomer
     ListCustomers,
     GetUserPassword,
     UpdateUserPassword,
@@ -242,6 +243,9 @@ def register():
         return render_template("register.html", error_msg="Error with DB")
 
     return render_template("register.html")
+
+
+
 
 
 if __name__ == "__main__":
