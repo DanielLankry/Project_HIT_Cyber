@@ -4,15 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Register</title>
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
   </head>
+
   <body>
     <div class="login-container">
       <div class="login-box">
         <h1>Register</h1>
-        <form action="/register" method="POST">
+
+        <!-- הודעת שגיאה מהשרת (Python) -->
+        {% if error_msg %}
+          <div class="alert alert-error">{{ error_msg }}</div>
+        {% endif %}
+
+        <!-- novalidate: כדי שהדפדפן לא יציג הודעות ברירת מחדל -->
+        <form id="registerForm" action="/register" method="POST" novalidate>
           <div class="input-group">
             <label for="first_name">First Name</label>
             <input
@@ -21,7 +27,9 @@
               name="first_name"
               placeholder="Enter your first name"
               required />
+            <small id="firstNameError" class="field-error" style="display:none;"></small>
           </div>
+
           <div class="input-group">
             <label for="last_name">Last Name</label>
             <input
@@ -30,16 +38,22 @@
               name="last_name"
               placeholder="Enter your last name"
               required />
+            <small id="lastNameError" class="field-error" style="display:none;"></small>
           </div>
+
           <div class="input-group">
             <label for="email">Email</label>
             <input
-              type="email"
+              type="text"
+              inputmode="email"
               id="email"
               name="email"
               placeholder="Enter your email"
+              autocomplete="email"
               required />
+            <small id="emailError" class="field-error" style="display:none;"></small>
           </div>
+
           <div class="input-group">
             <label for="password">Password</label>
             <input
@@ -48,7 +62,9 @@
               name="password"
               placeholder="Enter your password"
               required />
+            <small id="passwordError" class="field-error" style="display:none;"></small>
           </div>
+
           <div class="input-group">
             <label for="date_of_birth">Date of Birth</label>
             <input
@@ -56,21 +72,124 @@
               id="date_of_birth"
               name="date_of_birth"
               required />
+            <small id="dobError" class="field-error" style="display:none;"></small>
           </div>
+
           <button type="submit" class="login-btn">Register</button>
+
           <a
             href="{{ url_for('login') }}"
             class="pass_Forg-btn"
-            style="
-              text-decoration: none;
-              display: block;
-              text-align: center;
-              margin-top: 10px;
-            ">
+            style="text-decoration:none; display:block; text-align:center; margin-top:10px;">
             Back to Login
           </a>
         </form>
       </div>
     </div>
+
+    <script>
+      // ===== Helpers =====
+      function showError(inputEl, errorEl, msg) {
+        errorEl.textContent = msg;
+        errorEl.style.display = "block";
+        inputEl.classList.add("input-invalid");
+      }
+
+      function clearError(inputEl, errorEl) {
+        errorEl.textContent = "";
+        errorEl.style.display = "none";
+        inputEl.classList.remove("input-invalid");
+      }
+
+      // Email (basic but solid)
+      function isValidEmail(email) {
+        // no spaces, must contain one @, domain with dot
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+        return re.test(email);
+      }
+
+      // Password rules (mirror your policy roughly)
+      function validatePasswordClient(pwd) {
+        const minLen = 10;
+        if (pwd.length < minLen) return `Password must be at least ${minLen} characters.`;
+        if (!/[a-z]/.test(pwd)) return "Password must include at least one lowercase letter.";
+        if (!/[A-Z]/.test(pwd)) return "Password must include at least one uppercase letter.";
+        if (!/[0-9]/.test(pwd)) return "Password must include at least one number.";
+        if (!/[@!]/.test(pwd)) return "Password must include at least one special character (@ or !).";
+        return null;
+      }
+
+      // ===== Elements =====
+      const form = document.getElementById("registerForm");
+
+      const firstName = document.getElementById("first_name");
+      const lastName  = document.getElementById("last_name");
+      const email     = document.getElementById("email");
+      const password  = document.getElementById("password");
+      const dob       = document.getElementById("date_of_birth");
+
+      const firstNameError = document.getElementById("firstNameError");
+      const lastNameError  = document.getElementById("lastNameError");
+      const emailError     = document.getElementById("emailError");
+      const passwordError  = document.getElementById("passwordError");
+      const dobError       = document.getElementById("dobError");
+
+      // ===== Blur validation (when leaving the field) =====
+      firstName.addEventListener("blur", () => {
+        const v = firstName.value.trim();
+        if (!v) showError(firstName, firstNameError, "First name is required.");
+        else clearError(firstName, firstNameError);
+      });
+
+      lastName.addEventListener("blur", () => {
+        const v = lastName.value.trim();
+        if (!v) showError(lastName, lastNameError, "Last name is required.");
+        else clearError(lastName, lastNameError);
+      });
+
+      email.addEventListener("blur", () => {
+        const v = email.value.trim();
+        if (!v) showError(email, emailError, "Email is required.");
+        else if (!isValidEmail(v)) showError(email, emailError, "Please enter a valid email (example: name@example.com).");
+        else clearError(email, emailError);
+      });
+
+      password.addEventListener("blur", () => {
+        const v = password.value;
+        if (!v) showError(password, passwordError, "Password is required.");
+        else {
+          const err = validatePasswordClient(v);
+          if (err) showError(password, passwordError, err);
+          else clearError(password, passwordError);
+        }
+      });
+
+      dob.addEventListener("blur", () => {
+        const v = dob.value;
+        if (!v) showError(dob, dobError, "Date of birth is required.");
+        else clearError(dob, dobError);
+      });
+
+      // ===== Block submit if invalid =====
+      form.addEventListener("submit", (e) => {
+        // trigger all blur checks once
+        firstName.dispatchEvent(new Event("blur"));
+        lastName.dispatchEvent(new Event("blur"));
+        email.dispatchEvent(new Event("blur"));
+        password.dispatchEvent(new Event("blur"));
+        dob.dispatchEvent(new Event("blur"));
+
+        const anyErrorVisible =
+          firstNameError.style.display === "block" ||
+          lastNameError.style.display === "block" ||
+          emailError.style.display === "block" ||
+          passwordError.style.display === "block" ||
+          dobError.style.display === "block";
+
+        if (anyErrorVisible) {
+          e.preventDefault();
+        }
+      });
+    </script>
   </body>
 </html>

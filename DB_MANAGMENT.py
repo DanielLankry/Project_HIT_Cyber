@@ -1,6 +1,5 @@
-import mysql.connector
+import pymysql
 from dotenv import load_dotenv
-from datetime import datetime
 import os
 
 load_dotenv()
@@ -9,315 +8,320 @@ MYSQL_USER_ADMIN = os.getenv("MYSQL_USER_ADMIN")
 MYSQL_DB_NAME = os.getenv("MYSQL_DB_NAME")
 
 
-
-
 # יוצר חיבור למסד הנתונים לפי פרטי הסביבה ומחזיר חיבור פעיל אם הצליח
 def Establish_DB_Connection():
     try:
-        MYSQL_CONNECTION = mysql.connector.connect(
+        conn = pymysql.connect(
             host="localhost",
-            user= MYSQL_USER_ADMIN,
+            user=MYSQL_USER_ADMIN,
             password=MYSQL_PASSWORD,
-            database=MYSQL_DB_NAME
+            database=MYSQL_DB_NAME,
+            port=3306,
+            charset="utf8mb4",
+            autocommit=False,  # נשאיר False כי בקוד שלכם יש commit()
         )
+        print("Connected to the database")
+        return conn
 
-        if MYSQL_CONNECTION.is_connected():
-           print("Connected to the database")
-           return MYSQL_CONNECTION
-        else:
-            print("Failed to connect to the database")
+    except pymysql.MySQLError as err:
+        print(f"Error: {err}")
+        return None
 
-    except mysql.connector.Error as err:
-             print(f"Error: {err}")
 
 # סוגר חיבור למסד הנתונים אם הוא פתוח
-def CloseDBConnection(MYSQL_CONNECTION):
-    
+def CloseDBConnection(conn):
     try:
-        if MYSQL_CONNECTION and MYSQL_CONNECTION.is_connected():
-            MYSQL_CONNECTION.close()
+        if conn:
+            conn.close()
             print("Database connection closed successfully")
             return True
         else:
             print("Connection was already closed or never established")
             return False
-            
-    except mysql.connector.Error as err:
+
+    except Exception as err:
         print(f"Error closing connection: {err}")
         return False
 
+
 # מדפיס את כל הרשומות מטבלת המשתמשים (מיועד לבדיקה בלבד)
-def printTopRows(MYSQL_CONNECTION):
-     try:
-          MY_Current_Sesion = MYSQL_CONNECTION.cursor()
-          query = f"SELECT * FROM comunication_ltd.users"
+def printTopRows(conn):
+    try:
+        cur = conn.cursor()
+        query = "SELECT * FROM comunication_ltd.users"
+        cur.execute(query)
+        print(cur.fetchall())
+        cur.close()
 
-          MY_Current_Sesion.execute(query)
-          print(MY_Current_Sesion.fetchall())
-
-     except mysql.connector.Error as err:
-             print(f"Error: {err}")
+    except pymysql.MySQLError as err:
+        print(f"Error: {err}")
 
 
 # בודק האם קיים משתמש לפי כתובת דואר אלקטרוני ומחזיר אמת או שקר
-def CheckIfUserExists(MYSQL_CONNECTION, email):
+def CheckIfUserExists(conn, email):
     try:
-        MY_Current_Session = MYSQL_CONNECTION.cursor()
+        cur = conn.cursor()
         query = "SELECT COUNT(*) FROM comunication_ltd.users WHERE email = %s"
-        
-        MY_Current_Session.execute(query, (email,))
-        count = MY_Current_Session.fetchone()[0]
-        MY_Current_Session.close()
-        
+        cur.execute(query, (email,))
+        count = cur.fetchone()[0]
+        cur.close()
+
         if count > 0:
             print(f"User with email {email} exists")
             return True
         else:
             print(f"User with email {email} does not exist")
             return False
-            
-    except mysql.connector.Error as err:
+
+    except pymysql.MySQLError as err:
         print(f"Error: {err}")
         return False
 
 
 # מחזיר את כל פרטי המשתמש לפי כתובת דואר אלקטרוני או ריק אם לא נמצא
-def GetUserInfoByMail(MYSQL_CONNECTION, email):
+def GetUserInfoByMail(conn, email):
     try:
-        MY_Current_Session = MYSQL_CONNECTION.cursor(dictionary=True)
+        cur = conn.cursor(pymysql.cursors.DictCursor)
         query = "SELECT * FROM comunication_ltd.users WHERE email = %s"
-        
-        MY_Current_Session.execute(query, (email,))
-        user = MY_Current_Session.fetchone()
-        MY_Current_Session.close()
-        
+        cur.execute(query, (email,))
+        user = cur.fetchone()
+        cur.close()
+
         if user:
             print(f"User found: {user['first_name']} {user['last_name']}")
             return user
         else:
             print(f"No user found with email: {email}")
             return None
-            
-    except mysql.connector.Error as err:
+
+    except pymysql.MySQLError as err:
         print(f"Error: {err}")
         return None
 
 
 # מוחק משתמש ממסד הנתונים לפי כתובת דואר אלקטרוני
-def DeleteUser(MYSQL_CONNECTION, email):
+def DeleteUser(conn, email):
     try:
-        MY_Current_Session = MYSQL_CONNECTION.cursor()
+        cur = conn.cursor()
         query = "DELETE FROM comunication_ltd.users WHERE email = %s"
-        
-        MY_Current_Session.execute(query, (email,))
-        MYSQL_CONNECTION.commit()
-        
-        if MY_Current_Session.rowcount > 0:
-            print(f"User with email {email} deleted successfully.")
-            MY_Current_Session.close()
-            return True
-        else:
-            print(f"No user found with email: {email}")
-            MY_Current_Session.close()
-            return False
-            
-    except mysql.connector.Error as err:
+        cur.execute(query, (email,))
+        conn.commit()
+
+        ok = cur.rowcount > 0
+        cur.close()
+        return ok
+
+    except pymysql.MySQLError as err:
         print(f"Error: {err}")
         return False
-    
-    
+
 
 # מוסיף משתמש חדש למסד הנתונים עם הפרטים שנשלחו
-def AddUserToDB(MYSQL_CONNECTION, fname, lname, email, pwd, dob):
+def AddUserToDB(conn, fname, lname, email, pwd, dob):
     try:
-         cursor = MYSQL_CONNECTION.cursor()
-         query = "INSERT INTO comunication_ltd.users (first_name, last_name, email, password, date_of_birth) VALUES (%s, %s, %s, %s, %s)"
+        cur = conn.cursor()
+        query = (
+            "INSERT INTO comunication_ltd.users "
+            "(first_name, last_name, email, password, date_of_birth) "
+            "VALUES (%s, %s, %s, %s, %s)"
+        )
+        cur.execute(query, (fname, lname, email, pwd, dob))
+        conn.commit()
+        cur.close()
+        return True
 
-         cursor.execute(query, (fname, lname, email, pwd, dob))
-         MYSQL_CONNECTION.commit()
-         cursor.close()
-         return True
+    except pymysql.MySQLError as err:
+        print(f"Error: {err}")
+        return False
 
-    except mysql.connector.Error as err:
-         print(f"Error: {err}")
-         return False
 
 # מחזיר את הסיסמה של משתמש לפי כתובת דואר אלקטרוני
-def GetUserPassword(MYSQL_CONNECTION, email):
+def GetUserPassword(conn, email):
     try:
-        cursor = MYSQL_CONNECTION.cursor()
-        cursor.execute(
+        cur = conn.cursor()
+        cur.execute(
             "SELECT password FROM comunication_ltd.users WHERE email=%s LIMIT 1",
             (email,),
         )
-        row = cursor.fetchone()
-        cursor.close()
+        row = cur.fetchone()
+        cur.close()
         return row[0] if row else None
-    except mysql.connector.Error as err:
+
+    except pymysql.MySQLError as err:
         print(f"Error: {err}")
         return None
 
+
 # מעדכן סיסמה של משתמש במסד הנתונים לפי כתובת דואר אלקטרוני
-def UpdateUserPassword(MYSQL_CONNECTION, email, new_password):
+def UpdateUserPassword(conn, email, new_password):
     try:
-        cursor = MYSQL_CONNECTION.cursor()
-        cursor.execute(
+        cur = conn.cursor()
+        cur.execute(
             "UPDATE comunication_ltd.users SET password=%s WHERE email=%s",
             (new_password, email),
         )
-        MYSQL_CONNECTION.commit()
-        ok = cursor.rowcount > 0
-        cursor.close()
+        conn.commit()
+        ok = cur.rowcount > 0
+        cur.close()
         return ok
-    except mysql.connector.Error as err:
+
+    except pymysql.MySQLError as err:
         print(f"Error: {err}")
         return False
 
 
 # שומר קוד איפוס סיסמה עם זמן תפוגה, לאחר מחיקת קוד קודם אם קיים
-def SaveResetToken(MYSQL_CONNECTION, email, token_sha1, expires_at):
-    cursor = MYSQL_CONNECTION.cursor()
-    cursor.execute("DELETE FROM password_resets WHERE email=%s", (email,))
-    cursor.execute(
+def SaveResetToken(conn, email, token_sha1, expires_at):
+    cur = conn.cursor()
+    cur.execute("DELETE FROM password_resets WHERE email=%s", (email,))
+    cur.execute(
         "INSERT INTO password_resets (email, token_sha1, expires_at) VALUES (%s, %s, %s)",
         (email, token_sha1, expires_at)
     )
-    MYSQL_CONNECTION.commit()
-    cursor.close()
+    conn.commit()
+    cur.close()
     return True
 
+
 # מחזיר את קוד איפוס הסיסמה האחרון של משתמש או ריק אם לא קיים
-def GetResetTokenRow(MYSQL_CONNECTION, email):
-    cursor = MYSQL_CONNECTION.cursor(dictionary=True)
-    cursor.execute(
+def GetResetTokenRow(conn, email):
+    cur = conn.cursor(pymysql.cursors.DictCursor)
+    cur.execute(
         "SELECT * FROM password_resets WHERE email=%s ORDER BY created_at DESC LIMIT 1",
         (email,)
     )
-    row = cursor.fetchone()
-    cursor.close()
+    row = cur.fetchone()
+    cur.close()
     return row
 
+
 # מוחק קוד איפוס סיסמה של משתמש
-def DeleteResetToken(MYSQL_CONNECTION, email):
-    cursor = MYSQL_CONNECTION.cursor()
-    cursor.execute("DELETE FROM password_resets WHERE email=%s", (email,))
-    MYSQL_CONNECTION.commit()
-    cursor.close()
+def DeleteResetToken(conn, email):
+    cur = conn.cursor()
+    cur.execute("DELETE FROM password_resets WHERE email=%s", (email,))
+    conn.commit()
+    cur.close()
     return True
 
+
 # מוסיף חבילת שירות חדשה למסד הנתונים
-def AddPackage(MYSQL_CONNECTION, name, speed, price, description=None):
+def AddPackage(conn, name, speed, price, description=None):
     try:
-        cursor = MYSQL_CONNECTION.cursor()
+        cur = conn.cursor()
         query = (
             "INSERT INTO comunication_ltd.packages (name, speed, price, description) "
             "VALUES (%s, %s, %s, %s)"
         )
-        cursor.execute(query, (name, speed, price, description))
-        MYSQL_CONNECTION.commit()
-        cursor.close()
+        cur.execute(query, (name, speed, price, description))
+        conn.commit()
+        cur.close()
         return True
-    except mysql.connector.Error as err:
+    except pymysql.MySQLError as err:
         print(f"Error: {err}")
         return False
 
+
 # מחזיר את כל חבילות השירות הקיימות
-def GetPackages(MYSQL_CONNECTION):
+def GetPackages(conn):
     try:
-        cursor = MYSQL_CONNECTION.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM comunication_ltd.packages ORDER BY name")
-        rows = cursor.fetchall()
-        cursor.close()
+        cur = conn.cursor(pymysql.cursors.DictCursor)
+        cur.execute("SELECT * FROM comunication_ltd.packages ORDER BY name")
+        rows = cur.fetchall()
+        cur.close()
         return rows
-    except mysql.connector.Error as err:
+    except pymysql.MySQLError as err:
         print(f"Error: {err}")
         return []
 
 
 # הוספת לקוח חדש לטבלת customers
-def AddCustomer(MYSQL_CONNECTION, first_name, last_name, email=None, phone=None):
+def AddCustomer(conn, first_name, last_name, email=None, phone=None):
     try:
-        cursor = MYSQL_CONNECTION.cursor()
+        cur = conn.cursor()
         query = (
             "INSERT INTO comunication_ltd.customers "
             "(first_name, last_name, email, phone) "
             "VALUES (%s, %s, %s, %s)"
         )
-        cursor.execute(query, (first_name, last_name, email, phone))
-        MYSQL_CONNECTION.commit()
-        cursor.close()
+        cur.execute(query, (first_name, last_name, email, phone))
+        conn.commit()
+        cur.close()
         return True
-    except mysql.connector.Error as err:
+    except pymysql.MySQLError as err:
         print(f"Error: {err}")
         return False
 
+
 # מחזיר לקוח לפי כתובת דואר אלקטרוני
-def GetCustomerByEmail(MYSQL_CONNECTION, email):
+def GetCustomerByEmail(conn, email):
     try:
-        cursor = MYSQL_CONNECTION.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM comunication_ltd.customers WHERE email=%s", (email,))
-        row = cursor.fetchone()
-        cursor.close()
+        cur = conn.cursor(pymysql.cursors.DictCursor)
+        cur.execute("SELECT * FROM comunication_ltd.customers WHERE email=%s", (email,))
+        row = cur.fetchone()
+        cur.close()
         return row
-    except mysql.connector.Error as err:
+    except pymysql.MySQLError as err:
         print(f"Error: {err}")
         return None
+
 
 # מחזיר לקוח לפי מזהה
-def GetCustomerById(MYSQL_CONNECTION, customer_id):
+def GetCustomerById(conn, customer_id):
     try:
-        cursor = MYSQL_CONNECTION.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM comunication_ltd.customers WHERE id=%s", (customer_id,))
-        row = cursor.fetchone()
-        cursor.close()
+        cur = conn.cursor(pymysql.cursors.DictCursor)
+        cur.execute("SELECT * FROM comunication_ltd.customers WHERE id=%s", (customer_id,))
+        row = cur.fetchone()
+        cur.close()
         return row
-    except mysql.connector.Error as err:
+    except pymysql.MySQLError as err:
         print(f"Error: {err}")
         return None
 
+
 # מחזיר רשימת כל הלקוחות ממסד הנתונים
-def ListCustomers(MYSQL_CONNECTION):
+def ListCustomers(conn):
     try:
-        cursor = MYSQL_CONNECTION.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM comunication_ltd.customers ORDER BY created_at DESC")
-        rows = cursor.fetchall()
-        cursor.close()
+        cur = conn.cursor(pymysql.cursors.DictCursor)
+        cur.execute("SELECT * FROM comunication_ltd.customers ORDER BY created_at DESC")
+        rows = cur.fetchall()
+        cur.close()
         return rows
-    except mysql.connector.Error as err:
+    except pymysql.MySQLError as err:
         print(f"Error: {err}")
         return []
 
 
 # עדכון מונה ניסיונות התחברות כושלים
-def IncrementFailedLogin(MYSQL_CONNECTION, email):
+def IncrementFailedLogin(conn, email):
     try:
-        cursor = MYSQL_CONNECTION.cursor()
+        cur = conn.cursor()
         query = (
             "UPDATE comunication_ltd.users "
             "SET failed_login_count = failed_login_count + 1, last_login_attempt = NOW() "
             "WHERE email = %s"
         )
-        cursor.execute(query, (email,))
-        MYSQL_CONNECTION.commit()
-        cursor.close()
+        cur.execute(query, (email,))
+        conn.commit()
+        cur.close()
         return True
-    except mysql.connector.Error as err:
+    except pymysql.MySQLError as err:
         print(f"Error: {err}")
         return False
 
+
 # מאפס מונה ניסיונות התחברות כושלים של משתמש
-def ResetFailedLogin(MYSQL_CONNECTION, email):
+def ResetFailedLogin(conn, email):
     try:
-        cursor = MYSQL_CONNECTION.cursor()
+        cur = conn.cursor()
         query = (
             "UPDATE comunication_ltd.users "
             "SET failed_login_count = 0, last_login_attempt = NULL "
             "WHERE email = %s"
         )
-        cursor.execute(query, (email,))
-        MYSQL_CONNECTION.commit()
-        cursor.close()
+        cur.execute(query, (email,))
+        conn.commit()
+        cur.close()
         return True
-    except mysql.connector.Error as err:
+    except pymysql.MySQLError as err:
         print(f"Error: {err}")
         return False

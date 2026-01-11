@@ -3,7 +3,8 @@ import secrets
 import os
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, session
-from validator import validate_password_security
+from flask import session, redirect, url_for
+from validator import validate_password_security, validate_email_format, validate_phone_number
 from DB_MANAGMENT import (
     Establish_DB_Connection,
     CloseDBConnection,
@@ -12,11 +13,12 @@ from DB_MANAGMENT import (
     SaveResetToken,
     GetResetTokenRow,
     DeleteResetToken,
-    AddCustomer
+    AddCustomer,
     ListCustomers,
     GetUserPassword,
     UpdateUserPassword,
 )
+
 
 # =========================
 # Flask mini tutorial
@@ -75,6 +77,7 @@ def login():
         return redirect(url_for("dashboard")) # העברה למסך הראשי
 
     return render_template("login.html")
+
 
 
 @app.route("/forgot_password", methods=["GET", "POST"])
@@ -192,6 +195,7 @@ def change_password():
     return redirect(url_for("login"))
 
 
+
 @app.route("/dashboard", methods=["GET"])
 # דף אחרי התחברות: הצגת לקוחות
 def dashboard():
@@ -216,25 +220,31 @@ def register():
         if not conn:
             return render_template("register.html", error_msg="Connection Error")
 
-# קריאת נתונים מהטופס
+        # קריאת נתונים מהטופס
         fname = request.form["first_name"]
         lname = request.form["last_name"]
         email = request.form["email"].strip().lower()
         pwd = request.form["password"]
         dob = request.form["date_of_birth"]
 
-# בדיקת חוזק סיסמא
+        # בדיקת תקינות אימייל
+        error = validate_email_format(email)
+        if error:
+            CloseDBConnection(conn)
+            return render_template("register.html", error_msg=error)
+
+        # בדיקת חוזק סיסמא
         error = validate_password_security(pwd)
         if error:
             CloseDBConnection(conn)
             return render_template("register.html", error_msg=error)
 
-# בדיקה אם המשתמש קיים כבר
+        # בדיקה אם המשתמש קיים כבר
         if CheckIfUserExists(conn, email):
             CloseDBConnection(conn)
             return render_template("register.html", error_msg="User already exists")
 
-# יצירת משתמש בפועל
+        # יצירת משתמש בפועל
         success = AddUserToDB(conn, fname, lname, email, pwd, dob)
         CloseDBConnection(conn)
 
@@ -244,10 +254,91 @@ def register():
 
     return render_template("register.html")
 
+@app.route("/add_customer", methods=["GET", "POST"])
+def add_customer():
+    email = session.get("user_email")
+    if not email:
+        return redirect(url_for("login"))
+
+    if request.method == "POST":
+        first_name = request.form.get("first_name", "").strip()
+        last_name = request.form.get("last_name", "").strip()
+        email_cust = request.form.get("email", "").strip().lower()
+        phone = request.form.get("phone", "").strip()
+
+        if not first_name or not last_name:
+            return render_template(
+                "add_customer_form.html",
+                error_msg="Please fill all required fields",
+                first_name=first_name,
+                last_name=last_name,
+                email=email_cust,
+                phone=phone
+            )
+
+        # בדיקת תקינות אימייל של הלקוח 
+        if email_cust:
+            error = validate_email_format(email_cust)
+            if error:
+                return render_template(
+                    "add_customer_form.html",
+                    error_msg=error,
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email_cust,
+                    phone=phone
+                )
+
+        # בדיקת תקינות מספר טלפון: חובה 10 ספרות ורק מספרים
+        error = validate_phone_number(phone)
+        if error:
+            return render_template(
+                "add_customer_form.html",
+                error_msg=error,
+                first_name=first_name,
+                last_name=last_name,
+                email=email_cust,
+                phone=phone
+            )
+
+        conn = Establish_DB_Connection()
+        if not conn:
+            return render_template(
+                "add_customer_form.html",
+                error_msg="Database connection error",
+                first_name=first_name,
+                last_name=last_name,
+                email=email_cust,
+                phone=phone
+            )
+
+        success = AddCustomer(conn, first_name, last_name, email_cust, phone)
+        CloseDBConnection(conn)
+
+        if success:
+            return redirect(url_for("dashboard"))
+        else:
+            return render_template(
+                "add_customer_form.html",
+                error_msg="Failed to add customer",
+                first_name=first_name,
+                last_name=last_name,
+                email=email_cust,
+                phone=phone
+            )
+
+    return render_template("add_customer_form.html")
 
 
 
+@app.route("/logout")
+def logout():
+    session.clear()  # clears login session
+    return redirect(url_for("login"))  # login exists (Flask suggested it)
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    app.run(debug=True)
+
+
+
 

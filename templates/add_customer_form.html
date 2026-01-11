@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add New Customer</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap"
+      rel="stylesheet" />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+
+  <body>
+    <nav class="navbar">
+      <div class="nav-brand">
+        Comunication_LTD <span class="badge">Admin</span>
+      </div>
+
+      <div class="nav-actions">
+        <span class="user-greeting">Hello, Admin</span>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline">Back</a>
+      </div>
+    </nav>
+
+    <main class="dashboard-container">
+      <div class="page-header">
+        <h1>Add New Customer</h1>
+        <p class="subtitle">Enter the details below to add a new customer</p>
+      </div>
+
+      <div class="content-card">
+        {% if error_msg %}
+          <div class="alert alert-error">{{ error_msg }}</div>
+        {% endif %}
+
+        <form id="addCustomerForm" method="POST" class="form-grid" novalidate>
+          <div class="form-field">
+            <label>First Name</label>
+            <input type="text" name="first_name" required value="{{ first_name or '' }}" />
+          </div>
+
+          <div class="form-field">
+            <label>Last Name</label>
+            <input type="text" name="last_name" required value="{{ last_name or '' }}" />
+          </div>
+
+          <div class="form-field">
+            <label>Email </label>
+            <input type="email" name="email" value="{{ email or '' }}" />
+             <small id="custEmailError" class="field-error" style="display:none;"></small>
+          </div>
+
+          <div class="form-field">
+            <label>Phone </label>
+            <input
+              type="text"
+              name="phone"
+              value="{{ phone or '' }}"
+              inputmode="numeric"
+              maxlength="10"
+              pattern="\d{10}"
+              title="Phone must be exactly 10 digits" />
+              <small id="custPhoneError" class="field-error" style="display:none;"></small>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Save Customer</button>
+        </form>
+      </div>
+    </main>
+  </body>
+</html>
