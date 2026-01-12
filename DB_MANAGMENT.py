@@ -1,4 +1,5 @@
-import pymysql
+import mysql.connector
+from mysql.connector import Error
 from dotenv import load_dotenv
 import os
 
@@ -11,19 +12,19 @@ MYSQL_DB_NAME = os.getenv("MYSQL_DB_NAME")
 # יוצר חיבור למסד הנתונים לפי פרטי הסביבה ומחזיר חיבור פעיל אם הצליח
 def Establish_DB_Connection():
     try:
-        conn = pymysql.connect(
+        conn = mysql.connector.connect(
             host="localhost",
             user=MYSQL_USER_ADMIN,
             password=MYSQL_PASSWORD,
             database=MYSQL_DB_NAME,
             port=3306,
             charset="utf8mb4",
-            autocommit=False,  # נשאיר False כי בקוד שלכם יש commit()
+            autocommit=False,  
         )
         print("Connected to the database")
         return conn
 
-    except pymysql.MySQLError as err:
+    except Error as err:
         print(f"Error: {err}")
         return None
 
@@ -53,7 +54,7 @@ def printTopRows(conn):
         print(cur.fetchall())
         cur.close()
 
-    except pymysql.MySQLError as err:
+    except Error as err:
         print(f"Error: {err}")
 
 
@@ -61,8 +62,8 @@ def printTopRows(conn):
 def CheckIfUserExists(conn, email):
     try:
         cur = conn.cursor()
-        query = "SELECT COUNT(*) FROM comunication_ltd.users WHERE email = %s"
-        cur.execute(query, (email,))
+        query = "SELECT COUNT(*) FROM comunication_ltd.users WHERE email = '%s'"
+        cur.execute(query % email)
         count = cur.fetchone()[0]
         cur.close()
 
@@ -73,7 +74,7 @@ def CheckIfUserExists(conn, email):
             print(f"User with email {email} does not exist")
             return False
 
-    except pymysql.MySQLError as err:
+    except Error as err:
         print(f"Error: {err}")
         return False
 
@@ -81,7 +82,7 @@ def CheckIfUserExists(conn, email):
 # מחזיר את כל פרטי המשתמש לפי כתובת דואר אלקטרוני או ריק אם לא נמצא
 def GetUserInfoByMail(conn, email):
     try:
-        cur = conn.cursor(pymysql.cursors.DictCursor)
+        cur = conn.cursor(dictionary=True)
         query = "SELECT * FROM comunication_ltd.users WHERE email = %s"
         cur.execute(query, (email,))
         user = cur.fetchone()
@@ -94,7 +95,7 @@ def GetUserInfoByMail(conn, email):
             print(f"No user found with email: {email}")
             return None
 
-    except pymysql.MySQLError as err:
+    except Error as err:
         print(f"Error: {err}")
         return None
 
@@ -111,7 +112,7 @@ def DeleteUser(conn, email):
         cur.close()
         return ok
 
-    except pymysql.MySQLError as err:
+    except Error as err:
         print(f"Error: {err}")
         return False
 
@@ -130,7 +131,7 @@ def AddUserToDB(conn, fname, lname, email, pwd, dob):
         cur.close()
         return True
 
-    except pymysql.MySQLError as err:
+    except Error as err:
         print(f"Error: {err}")
         return False
 
@@ -140,14 +141,14 @@ def GetUserPassword(conn, email):
     try:
         cur = conn.cursor()
         cur.execute(
-            "SELECT password FROM comunication_ltd.users WHERE email=%s LIMIT 1",
-            (email,),
+            "SELECT password FROM comunication_ltd.users WHERE email='%s' LIMIT 1"
+            % email
         )
         row = cur.fetchone()
         cur.close()
         return row[0] if row else None
 
-    except pymysql.MySQLError as err:
+    except Error as err:
         print(f"Error: {err}")
         return None
 
@@ -157,15 +158,15 @@ def UpdateUserPassword(conn, email, new_password):
     try:
         cur = conn.cursor()
         cur.execute(
-            "UPDATE comunication_ltd.users SET password=%s WHERE email=%s",
-            (new_password, email),
+            "UPDATE comunication_ltd.users SET password='%s' WHERE email='%s'"
+            % (new_password, email)
         )
         conn.commit()
         ok = cur.rowcount > 0
         cur.close()
         return ok
 
-    except pymysql.MySQLError as err:
+    except Error as err:
         print(f"Error: {err}")
         return False
 
@@ -185,7 +186,7 @@ def SaveResetToken(conn, email, token_sha1, expires_at):
 
 # מחזיר את קוד איפוס הסיסמה האחרון של משתמש או ריק אם לא קיים
 def GetResetTokenRow(conn, email):
-    cur = conn.cursor(pymysql.cursors.DictCursor)
+    cur = conn.cursor(dictionary=True)
     cur.execute(
         "SELECT * FROM password_resets WHERE email=%s ORDER BY created_at DESC LIMIT 1",
         (email,)
@@ -216,7 +217,7 @@ def AddPackage(conn, name, speed, price, description=None):
         conn.commit()
         cur.close()
         return True
-    except pymysql.MySQLError as err:
+    except Error as err:
         print(f"Error: {err}")
         return False
 
@@ -224,12 +225,12 @@ def AddPackage(conn, name, speed, price, description=None):
 # מחזיר את כל חבילות השירות הקיימות
 def GetPackages(conn):
     try:
-        cur = conn.cursor(pymysql.cursors.DictCursor)
+        cur = conn.cursor(dictionary=True)
         cur.execute("SELECT * FROM comunication_ltd.packages ORDER BY name")
         rows = cur.fetchall()
         cur.close()
         return rows
-    except pymysql.MySQLError as err:
+    except Error as err:
         print(f"Error: {err}")
         return []
 
@@ -247,7 +248,7 @@ def AddCustomer(conn, first_name, last_name, email=None, phone=None):
         conn.commit()
         cur.close()
         return True
-    except pymysql.MySQLError as err:
+    except Error as err:
         print(f"Error: {err}")
         return False
 
@@ -255,12 +256,12 @@ def AddCustomer(conn, first_name, last_name, email=None, phone=None):
 # מחזיר לקוח לפי כתובת דואר אלקטרוני
 def GetCustomerByEmail(conn, email):
     try:
-        cur = conn.cursor(pymysql.cursors.DictCursor)
+        cur = conn.cursor(dictionary=True)
         cur.execute("SELECT * FROM comunication_ltd.customers WHERE email=%s", (email,))
         row = cur.fetchone()
         cur.close()
         return row
-    except pymysql.MySQLError as err:
+    except Error as err:
         print(f"Error: {err}")
         return None
 
@@ -268,12 +269,12 @@ def GetCustomerByEmail(conn, email):
 # מחזיר לקוח לפי מזהה
 def GetCustomerById(conn, customer_id):
     try:
-        cur = conn.cursor(pymysql.cursors.DictCursor)
+        cur = conn.cursor(dictionary=True)
         cur.execute("SELECT * FROM comunication_ltd.customers WHERE id=%s", (customer_id,))
         row = cur.fetchone()
         cur.close()
         return row
-    except pymysql.MySQLError as err:
+    except Error as err:
         print(f"Error: {err}")
         return None
 
@@ -281,12 +282,12 @@ def GetCustomerById(conn, customer_id):
 # מחזיר רשימת כל הלקוחות ממסד הנתונים
 def ListCustomers(conn):
     try:
-        cur = conn.cursor(pymysql.cursors.DictCursor)
+        cur = conn.cursor(dictionary=True)
         cur.execute("SELECT * FROM comunication_ltd.customers ORDER BY created_at DESC")
         rows = cur.fetchall()
         cur.close()
         return rows
-    except pymysql.MySQLError as err:
+    except Error as err:
         print(f"Error: {err}")
         return []
 
@@ -298,13 +299,13 @@ def IncrementFailedLogin(conn, email):
         query = (
             "UPDATE comunication_ltd.users "
             "SET failed_login_count = failed_login_count + 1, last_login_attempt = NOW() "
-            "WHERE email = %s"
+            "WHERE email = '%s'"
         )
-        cur.execute(query, (email,))
+        cur.execute(query % email)
         conn.commit()
         cur.close()
         return True
-    except pymysql.MySQLError as err:
+    except Error as err:
         print(f"Error: {err}")
         return False
 
@@ -316,12 +317,12 @@ def ResetFailedLogin(conn, email):
         query = (
             "UPDATE comunication_ltd.users "
             "SET failed_login_count = 0, last_login_attempt = NULL "
-            "WHERE email = %s"
+            "WHERE email = '%s'"
         )
-        cur.execute(query, (email,))
+        cur.execute(query % email)
         conn.commit()
         cur.close()
         return True
-    except pymysql.MySQLError as err:
+    except Error as err:
         print(f"Error: {err}")
         return False
