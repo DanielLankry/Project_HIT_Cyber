@@ -53,7 +53,7 @@ def CheckIfUserExists(conn, email):
 # --- פונקציית ההתחברות הפרוצה ---
 def VulnerableLogin(conn, email, password):
     try:
-        cur = conn.cursor(dictionary=True)
+        cur = conn.cursor(dictionary=True, buffered=True)
         # תיקון לוגי: הוספנו סוגריים מסביב לכל התנאי
         # זה עוזר להזרקות לעבוד בצורה חלקה יותר
         query = f"SELECT * FROM users WHERE email='{email}' AND password='{password}'"
