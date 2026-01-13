@@ -27,9 +27,7 @@
           Change Password
         </a>
 
-        <a href="{{ url_for('logout') }}" class="btn btn-ghost">
-          Logout
-        </a>
+        <a href="{{ url_for('logout') }}" class="btn btn-ghost"> Logout </a>
       </div>
     </nav>
 
@@ -55,45 +53,43 @@
 
       <div class="content-card">
         {% if error_msg %}
-          <div class="alert alert-error">{{ error_msg }}</div>
-        {% endif %}
+        <div class="alert alert-error">{{ error_msg }}</div>
+        {% endif %} {% if customers %}
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Join Date</th>
+              </tr>
+            </thead>
 
-        {% if customers %}
-          <div class="table-responsive">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>First Name</th>
-                  <th>Last Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Join Date</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {% for c in customers %}
-                  <tr>
-                    <td><strong>{{ c.first_name }}</strong></td>
-                    <td>{{ c.last_name }}</td>
-                    <td>{{ c.email or "-" }}</td>
-                    <td>{{ c.phone or "-" }}</td>
-                    <td>{{ c.created_at }}</td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
+            <tbody>
+              {% for c in customers %}
+              <tr>
+                <td>{{ c.first_name | safe }}</td>
+                <td>{{ c.last_name | safe }}</td>
+                <td>{{ c.email or "-" }}</td>
+                <td>{{ c.phone or "-" }}</td>
+                <td>{{ c.created_at }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
         {% else %}
-          <div class="empty-state">
-            <div class="empty-icon">📂</div>
-            <h3>No customers found</h3>
-            <p>Start adding customers to the system to see them here.</p>
+        <div class="empty-state">
+          <div class="empty-icon">📂</div>
+          <h3>No customers found</h3>
+          <p>Start adding customers to the system to see them here.</p>
 
-            <a href="{{ url_for('add_customer') }}" class="btn btn-primary">
-              Add First Customer
-            </a>
-          </div>
+          <a href="{{ url_for('add_customer') }}" class="btn btn-primary">
+            Add First Customer
+          </a>
+        </div>
         {% endif %}
       </div>
     </main>
