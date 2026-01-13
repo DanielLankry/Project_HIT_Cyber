@@ -62,8 +62,9 @@ def printTopRows(conn):
 def CheckIfUserExists(conn, email):
     try:
         cur = conn.cursor()
-        query = "SELECT COUNT(*) FROM comunication_ltd.users WHERE email = '%s'"
-        cur.execute(query % email)
+        # Vulnerable: Direct string formatting
+        query = f"SELECT COUNT(*) FROM comunication_ltd.users WHERE email = '{email}'"
+        cur.execute(query)
         count = cur.fetchone()[0]
         cur.close()
 
@@ -83,8 +84,9 @@ def CheckIfUserExists(conn, email):
 def GetUserInfoByMail(conn, email):
     try:
         cur = conn.cursor(dictionary=True)
-        query = "SELECT * FROM comunication_ltd.users WHERE email = %s"
-        cur.execute(query, (email,))
+        # Vulnerable: Direct string formatting
+        query = f"SELECT * FROM comunication_ltd.users WHERE email = '{email}'"
+        cur.execute(query)
         user = cur.fetchone()
         cur.close()
 
@@ -104,8 +106,9 @@ def GetUserInfoByMail(conn, email):
 def DeleteUser(conn, email):
     try:
         cur = conn.cursor()
-        query = "DELETE FROM comunication_ltd.users WHERE email = %s"
-        cur.execute(query, (email,))
+        # Vulnerable: Direct string formatting
+        query = f"DELETE FROM comunication_ltd.users WHERE email = '{email}'"
+        cur.execute(query)
         conn.commit()
 
         ok = cur.rowcount > 0
@@ -121,12 +124,13 @@ def DeleteUser(conn, email):
 def AddUserToDB(conn, fname, lname, email, pwd, dob):
     try:
         cur = conn.cursor()
+        # Vulnerable: Direct string formatting
         query = (
-            "INSERT INTO comunication_ltd.users "
-            "(first_name, last_name, email, password, date_of_birth) "
-            "VALUES (%s, %s, %s, %s, %s)"
+            f"INSERT INTO comunication_ltd.users "
+            f"(first_name, last_name, email, password, date_of_birth) "
+            f"VALUES ('{fname}', '{lname}', '{email}', '{pwd}', '{dob}')"
         )
-        cur.execute(query, (fname, lname, email, pwd, dob))
+        cur.execute(query)
         conn.commit()
         cur.close()
         return True
@@ -140,10 +144,9 @@ def AddUserToDB(conn, fname, lname, email, pwd, dob):
 def GetUserPassword(conn, email):
     try:
         cur = conn.cursor()
-        cur.execute(
-            "SELECT password FROM comunication_ltd.users WHERE email='%s' LIMIT 1"
-            % email
-        )
+        # Vulnerable: Direct string formatting
+        query = f"SELECT password FROM comunication_ltd.users WHERE email='{email}' LIMIT 1"
+        cur.execute(query)
         row = cur.fetchone()
         cur.close()
         return row[0] if row else None
@@ -157,10 +160,9 @@ def GetUserPassword(conn, email):
 def UpdateUserPassword(conn, email, new_password):
     try:
         cur = conn.cursor()
-        cur.execute(
-            "UPDATE comunication_ltd.users SET password='%s' WHERE email='%s'"
-            % (new_password, email)
-        )
+        # Vulnerable: Direct string formatting
+        query = f"UPDATE comunication_ltd.users SET password='{new_password}' WHERE email='{email}'"
+        cur.execute(query)
         conn.commit()
         ok = cur.rowcount > 0
         cur.close()
@@ -173,47 +175,63 @@ def UpdateUserPassword(conn, email, new_password):
 
 # שומר קוד איפוס סיסמה עם זמן תפוגה, לאחר מחיקת קוד קודם אם קיים
 def SaveResetToken(conn, email, token_sha1, expires_at):
-    cur = conn.cursor()
-    cur.execute("DELETE FROM password_resets WHERE email=%s", (email,))
-    cur.execute(
-        "INSERT INTO password_resets (email, token_sha1, expires_at) VALUES (%s, %s, %s)",
-        (email, token_sha1, expires_at)
-    )
-    conn.commit()
-    cur.close()
-    return True
+    try:
+        cur = conn.cursor()
+        # Vulnerable: Direct string formatting
+        cur.execute(f"DELETE FROM password_resets WHERE email='{email}'")
+        
+        query = (
+            f"INSERT INTO password_resets (email, token_sha1, expires_at) "
+            f"VALUES ('{email}', '{token_sha1}', '{expires_at}')"
+        )
+        cur.execute(query)
+        conn.commit()
+        cur.close()
+        return True
+    except Error as err:
+        print(f"Error: {err}")
+        return False
 
 
 # מחזיר את קוד איפוס הסיסמה האחרון של משתמש או ריק אם לא קיים
 def GetResetTokenRow(conn, email):
-    cur = conn.cursor(dictionary=True)
-    cur.execute(
-        "SELECT * FROM password_resets WHERE email=%s ORDER BY created_at DESC LIMIT 1",
-        (email,)
-    )
-    row = cur.fetchone()
-    cur.close()
-    return row
+    try:
+        cur = conn.cursor(dictionary=True)
+        # Vulnerable: Direct string formatting
+        query = f"SELECT * FROM password_resets WHERE email='{email}' ORDER BY created_at DESC LIMIT 1"
+        cur.execute(query)
+        row = cur.fetchone()
+        cur.close()
+        return row
+    except Error as err:
+        print(f"Error: {err}")
+        return None
 
 
 # מוחק קוד איפוס סיסמה של משתמש
 def DeleteResetToken(conn, email):
-    cur = conn.cursor()
-    cur.execute("DELETE FROM password_resets WHERE email=%s", (email,))
-    conn.commit()
-    cur.close()
-    return True
+    try:
+        cur = conn.cursor()
+        # Vulnerable: Direct string formatting
+        cur.execute(f"DELETE FROM password_resets WHERE email='{email}'")
+        conn.commit()
+        cur.close()
+        return True
+    except Error as err:
+        print(f"Error: {err}")
+        return False
 
 
 # מוסיף חבילת שירות חדשה למסד הנתונים
 def AddPackage(conn, name, speed, price, description=None):
     try:
         cur = conn.cursor()
+        # Vulnerable: Direct string formatting
         query = (
-            "INSERT INTO comunication_ltd.packages (name, speed, price, description) "
-            "VALUES (%s, %s, %s, %s)"
+            f"INSERT INTO comunication_ltd.packages (name, speed, price, description) "
+            f"VALUES ('{name}', '{speed}', '{price}', '{description}')"
         )
-        cur.execute(query, (name, speed, price, description))
+        cur.execute(query)
         conn.commit()
         cur.close()
         return True
@@ -239,12 +257,12 @@ def GetPackages(conn):
 def AddCustomer(conn, first_name, last_name, email=None, phone=None):
     try:
         cur = conn.cursor()
+        # Vulnerable: Direct string formatting
         query = (
-            "INSERT INTO comunication_ltd.customers "
-            "(first_name, last_name, email, phone) "
-            "VALUES (%s, %s, %s, %s)"
+            f"INSERT INTO comunication_ltd.customers (first_name, last_name, email, phone) "
+            f"VALUES ('{first_name}', '{last_name}', '{email}', '{phone}')"
         )
-        cur.execute(query, (first_name, last_name, email, phone))
+        cur.execute(query)
         conn.commit()
         cur.close()
         return True
@@ -257,7 +275,8 @@ def AddCustomer(conn, first_name, last_name, email=None, phone=None):
 def GetCustomerByEmail(conn, email):
     try:
         cur = conn.cursor(dictionary=True)
-        cur.execute("SELECT * FROM comunication_ltd.customers WHERE email=%s", (email,))
+        # Vulnerable: Direct string formatting
+        cur.execute(f"SELECT * FROM comunication_ltd.customers WHERE email='{email}'")
         row = cur.fetchone()
         cur.close()
         return row
@@ -270,7 +289,8 @@ def GetCustomerByEmail(conn, email):
 def GetCustomerById(conn, customer_id):
     try:
         cur = conn.cursor(dictionary=True)
-        cur.execute("SELECT * FROM comunication_ltd.customers WHERE id=%s", (customer_id,))
+        # Vulnerable: Direct string formatting
+        cur.execute(f"SELECT * FROM comunication_ltd.customers WHERE id='{customer_id}'")
         row = cur.fetchone()
         cur.close()
         return row
@@ -296,12 +316,13 @@ def ListCustomers(conn):
 def IncrementFailedLogin(conn, email):
     try:
         cur = conn.cursor()
+        # Vulnerable: Direct string formatting
         query = (
-            "UPDATE comunication_ltd.users "
-            "SET failed_login_count = failed_login_count + 1, last_login_attempt = NOW() "
-            "WHERE email = '%s'"
+            f"UPDATE comunication_ltd.users "
+            f"SET failed_login_count = failed_login_count + 1, last_login_attempt = NOW() "
+            f"WHERE email = '{email}'"
         )
-        cur.execute(query % email)
+        cur.execute(query)
         conn.commit()
         cur.close()
         return True
@@ -314,12 +335,13 @@ def IncrementFailedLogin(conn, email):
 def ResetFailedLogin(conn, email):
     try:
         cur = conn.cursor()
+        # Vulnerable: Direct string formatting
         query = (
-            "UPDATE comunication_ltd.users "
-            "SET failed_login_count = 0, last_login_attempt = NULL "
-            "WHERE email = '%s'"
+            f"UPDATE comunication_ltd.users "
+            f"SET failed_login_count = 0, last_login_attempt = NULL "
+            f"WHERE email = '{email}'"
         )
-        cur.execute(query % email)
+        cur.execute(query)
         conn.commit()
         cur.close()
         return True

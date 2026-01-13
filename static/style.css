@@ -183,6 +183,24 @@ body {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
+.input-group input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid var(--border-color);
+  background-color: #f8fafc;
+  border-radius: 8px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
 /* Toggle eye icon - positioned right for English */
 .toggle {
   position: absolute;
@@ -368,5 +386,69 @@ body {
 }
 
 .auth-footer a:hover {
+  text-decoration: underline;
+}
+
+/* --- Form Grid (Dashboard) --- */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+  padding: 30px;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-main);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.form-field input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid var(--border-color);
+  background-color: #f8fafc;
+  border-radius: 8px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.form-field input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-grid .btn-primary {
+  grid-column: 1 / -1;
+  justify-self: flex-end;
+  width: auto;
+}
+
+/* --- Field Errors --- */
+.field-error {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--error-text);
+}
+
+.input-invalid {
+  border-color: #f87171 !important;
+  background: #fff5f5;
+}
+
+/* --- Register Page Link --- */
+.pass_Forg-btn {
+  color: var(--primary-color);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.pass_Forg-btn:hover {
   text-decoration: underline;
 }
