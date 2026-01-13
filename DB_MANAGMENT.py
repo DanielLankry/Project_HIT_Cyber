@@ -79,7 +79,20 @@ def CheckIfUserExists(conn, email):
         print(f"Error: {err}")
         return False
 
-
+# פונקציה חדשה שמאפשרת SQL Injection להתחברות
+def VulnerableLogin(conn, email, password):
+    try:
+        cur = conn.cursor(dictionary=True)
+        # כאן נמצאת החולשה: בדיקת הסיסמה נעשית בתוך השאילתה הפריצה
+        query = f"SELECT * FROM comunication_ltd.users WHERE email='{email}' AND password='{password}'"
+        cur.execute(query)
+        user = cur.fetchone()
+        cur.close()
+        return user
+    except Error as err:
+        print(f"Error: {err}")
+        return None
+    
 # מחזיר את כל פרטי המשתמש לפי כתובת דואר אלקטרוני או ריק אם לא נמצא
 def GetUserInfoByMail(conn, email):
     try:
