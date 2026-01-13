@@ -16,6 +16,7 @@ from DB_MANAGMENT import (
     ListCustomers,
     GetUserPassword,
     UpdateUserPassword,
+    VulnerableLogin
 )
 
 app = Flask(__name__)
@@ -28,29 +29,21 @@ def login():
         email = request.form.get("email", "").strip().lower()
         pwd = request.form.get("password", "")
 
-        if not email or not pwd:
-            return render_template("login.html", error_msg="Please fill email and password")
-
         conn = Establish_DB_Connection()
         if not conn:
             return render_template("login.html", error_msg="connection error")
 
-        if not CheckIfUserExists(conn, email):
-            CloseDBConnection(conn)
-            return render_template("login.html", error_msg="User not found")
-
-        db_pwd = GetUserPassword(conn, email) 
+        # === שינוי קריטי: שימוש בפונקציה הפריצה ===
+        user = VulnerableLogin(conn, email, pwd)
         CloseDBConnection(conn)
 
-        if db_pwd is None:
-            return render_template("login.html", error_msg="User not found")
-
-        if pwd != db_pwd:
-            return render_template("login.html", error_msg="Wrong password")
-
-        session.pop("reset_email", None)
-        session["user_email"] = email
-        return redirect(url_for("dashboard"))
+        if user:
+            # התחברות מוצלחת
+            session.pop("reset_email", None)
+            session["user_email"] = user["email"]
+            return redirect(url_for("dashboard"))
+        else:
+            return render_template("login.html", error_msg="Wrong credentials")
 
     return render_template("login.html")
 
