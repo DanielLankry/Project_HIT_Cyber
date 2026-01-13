@@ -21,7 +21,6 @@ from DB_MANAGMENT import (
 
 app = Flask(__name__)
 app.secret_key = os.urandom(32)
-
 @app.route("/", methods=["GET", "POST"])
 @app.route("/login", methods=["GET", "POST"])
 def login():
