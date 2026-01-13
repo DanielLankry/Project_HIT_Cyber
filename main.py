@@ -25,19 +25,18 @@ app.secret_key = os.urandom(32)
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        email = request.form.get("email", "").strip().lower()
+        email = request.form.get("email", "").lower()
         pwd = request.form.get("password", "")
 
         conn = Establish_DB_Connection()
         if not conn:
             return render_template("login.html", error_msg="connection error")
 
-        # === שינוי קריטי: שימוש בפונקציה הפריצה ===
+        # === Vulnerable Login Logic ===
         user = VulnerableLogin(conn, email, pwd)
         CloseDBConnection(conn)
 
         if user:
-            # התחברות מוצלחת
             session.pop("reset_email", None)
             session["user_email"] = user["email"]
             return redirect(url_for("dashboard"))
@@ -45,7 +44,6 @@ def login():
             return render_template("login.html", error_msg="Wrong credentials")
 
     return render_template("login.html")
-
 
 @app.route("/forgot_password", methods=["GET", "POST"])
 def forgot_password():

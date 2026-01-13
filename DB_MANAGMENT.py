@@ -34,12 +34,13 @@ def CloseDBConnection(conn):
         print(f"Error closing connection: {err}")
         return False
 
-# --- Vulnerable Functions below ---
+# ==========================================
+#  VULNERABLE FUNCTIONS (החלק החשוב)
+# ==========================================
 
 def CheckIfUserExists(conn, email):
     try:
         cur = conn.cursor()
-        # Vulnerable
         query = f"SELECT COUNT(*) FROM users WHERE email = '{email}'"
         cur.execute(query)
         count = cur.fetchone()[0]
@@ -49,12 +50,14 @@ def CheckIfUserExists(conn, email):
         print(f"Error: {err}")
         return False
 
-# פונקציה שמאפשרת פריצה כי היא בודקת סיסמה בתוך השאילת# פונקציה חדשה שמאפשרת SQL Injection להתחברות
+# --- פונקציית ההתחברות הפרוצה ---
 def VulnerableLogin(conn, email, password):
     try:
         cur = conn.cursor(dictionary=True)
-        # כאן נמצאת החולשה: בדיקת הסיסמה נעשית בתוך השאילתה הפריצה
-        query = f"SELECT * FROM comunication_ltd.users WHERE email='{email}' AND password='{password}'"
+        # תיקון לוגי: הוספנו סוגריים מסביב לכל התנאי
+        # זה עוזר להזרקות לעבוד בצורה חלקה יותר
+        query = f"SELECT * FROM users WHERE email='{email}' AND password='{password}'"
+        print(f"DEBUG SQL: {query}") 
         cur.execute(query)
         user = cur.fetchone()
         cur.close()
@@ -62,7 +65,24 @@ def VulnerableLogin(conn, email, password):
     except Error as err:
         print(f"Error: {err}")
         return None
-    
+
+# --- פונקציית הוספת לקוח (עבור XSS) ---
+def AddCustomer(conn, first_name, last_name, email=None, phone=None):
+    try:
+        cur = conn.cursor()
+        # שימוש בגרש בודד כדי לאפשר XSS עם גרשיים כפולים
+        query = f"INSERT INTO customers (first_name, last_name, email, phone) VALUES ('{first_name}', '{last_name}', '{email}', '{phone}')"
+        cur.execute(query)
+        conn.commit()
+        cur.close()
+        return True
+    except Error as err:
+        print(f"Error: {err}")
+        return False
+
+# ==========================================
+#  Standard Functions
+# ==========================================
 
 def GetUserPassword(conn, email):
     try:
@@ -73,34 +93,17 @@ def GetUserPassword(conn, email):
         cur.close()
         return row[0] if row else None
     except Error as err:
-        print(f"Error: {err}")
         return None
 
 def AddUserToDB(conn, fname, lname, email, pwd, dob):
     try:
         cur = conn.cursor()
-        # Vulnerable
         query = f"INSERT INTO users (first_name, last_name, email, password, date_of_birth) VALUES ('{fname}', '{lname}', '{email}', '{pwd}', '{dob}')"
         cur.execute(query)
         conn.commit()
         cur.close()
         return True
     except Error as err:
-        print(f"Error: {err}")
-        return False
-
-def AddCustomer(conn, first_name, last_name, email=None, phone=None):
-    try:
-        cur = conn.cursor()
-        # Vulnerable - קריטי ל-XSS
-        # משתמשים בגרש בודד (') כדי לעטוף ערכים
-        query = f"INSERT INTO customers (first_name, last_name, email, phone) VALUES ('{first_name}', '{last_name}', '{email}', '{phone}')"
-        cur.execute(query)
-        conn.commit()
-        cur.close()
-        return True
-    except Error as err:
-        print(f"Error: {err}")
         return False
 
 def ListCustomers(conn):
@@ -111,10 +114,8 @@ def ListCustomers(conn):
         cur.close()
         return rows
     except Error as err:
-        print(f"Error: {err}")
         return []
 
-# פונקציות עזר נוספות (אם היו לך בשימוש) יכולות להישאר כפי שהן
 def UpdateUserPassword(conn, email, new_password):
     try:
         cur = conn.cursor()
@@ -123,8 +124,7 @@ def UpdateUserPassword(conn, email, new_password):
         conn.commit()
         cur.close()
         return True
-    except Error as err:
-        return False
+    except: return False
 
 def SaveResetToken(conn, email, token_sha1, expires_at):
     try:
