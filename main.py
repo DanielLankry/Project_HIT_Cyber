@@ -367,8 +367,8 @@ def add_customer():
 
 @app.route("/logout")
 def logout():
-    session.clear()  # clears login session
-    return redirect(url_for("login"))  # login exists (Flask suggested it)
+    session.clear()  
+    return redirect(url_for("login"))  
 
 if __name__ == "__main__":
     app.run(debug=True)
