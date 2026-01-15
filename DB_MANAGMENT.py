@@ -79,6 +79,17 @@ def AddCustomer(conn, first_name, last_name, email=None, phone=None):
     except Error as err:
         print(f"Error: {err}")
         return False
+        
+def AddUserToDB(conn, fname, lname, email, pwd, dob):
+    try:
+        cur = conn.cursor()
+        query = f"INSERT INTO users (first_name, last_name, email, password, date_of_birth) VALUES ('{fname}', '{lname}', '{email}', '{pwd}', '{dob}')"
+        cur.execute(query)
+        conn.commit()
+        cur.close()
+        return True
+    except Error as err:
+            return False
 
 # ==========================================
 #  Standard Functions
@@ -94,17 +105,6 @@ def GetUserPassword(conn, email):
         return row[0] if row else None
     except Error as err:
         return None
-
-def AddUserToDB(conn, fname, lname, email, pwd, dob):
-    try:
-        cur = conn.cursor()
-        query = f"INSERT INTO users (first_name, last_name, email, password, date_of_birth) VALUES ('{fname}', '{lname}', '{email}', '{pwd}', '{dob}')"
-        cur.execute(query)
-        conn.commit()
-        cur.close()
-        return True
-    except Error as err:
-        return False
 
 def ListCustomers(conn):
     try:
