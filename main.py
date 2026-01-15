@@ -146,53 +146,87 @@ def verify_reset_code():
 
 
 @app.route("/change_password", methods=["GET", "POST"])
-# שינוי סיסמה לפי מדיניות ואימות מול בסיס הנתונים
 def change_password():
+    # האם הגענו דרך Forgot Password (איפוס)?
+    is_reset_flow = session.get("reset_email") is not None
+
+    # GET: הצגת המסך
     if request.method == "GET":
-        return render_template("change_password.html")
-# POST: קריאת שדות מהטופס
+        return render_template("change_password.html", is_reset_flow=is_reset_flow)
+
+    # POST: קריאת שדות מהטופס
     current_pwd = request.form.get("currentPassword", "")
     new_pwd = request.form.get("newPassword", "")
     confirm_pwd = request.form.get("confirmPassword", "")
- #שינוי סיסמה מותר רק למשתמש מחובר או למשתמש שעבר אימות איפוס.
+
+    # שינוי סיסמה מותר רק למשתמש מחובר או למשתמש שעבר אימות איפוס
     email = session.get("reset_email") or session.get("user_email")
     if not email:
         return redirect(url_for("login"))
-# בדיקה שהסיסמאות החדשות תואמות
-    if new_pwd != confirm_pwd:
-        return render_template("change_password.html", error_msg="Passwords do not match")
 
+    # בדיקה שהסיסמאות החדשות תואמות
+    if new_pwd != confirm_pwd:
+        return render_template(
+            "change_password.html",
+            error_msg="Passwords do not match",
+            is_reset_flow=is_reset_flow
+        )
+
+    # בדיקת מדיניות סיסמה (אם יש לך validate_password_security)
     error = validate_password_security(new_pwd)
     if error:
-        return render_template("change_password.html", error_msg=error)
+        return render_template(
+            "change_password.html",
+            error_msg=error,
+            is_reset_flow=is_reset_flow
+        )
 
     conn = Establish_DB_Connection()
     if not conn:
-        return render_template("change_password.html", error_msg="connection error")
+        return render_template(
+            "change_password.html",
+            error_msg="connection error",
+            is_reset_flow=is_reset_flow
+        )
 
     db_pwd = GetUserPassword(conn, email)
     if db_pwd is None:
         CloseDBConnection(conn)
-        return render_template("change_password.html", error_msg="User not found")
-    
+        return render_template(
+            "change_password.html",
+            error_msg="User not found",
+            is_reset_flow=is_reset_flow
+        )
+
     # אם זה שינוי סיסמה "רגיל" (לא איפוס) -> חייבים לאמת סיסמה נוכחית
-    if session.get("reset_email") is None:
+    if not is_reset_flow:
         if current_pwd != db_pwd:
             CloseDBConnection(conn)
-            return render_template("change_password.html", error_msg="Current password is incorrect")
-# אם כול הבדיקות בסדר נשנה את הסיסמא ונמחק את הטוקן היחודי
+            return render_template(
+                "change_password.html",
+                error_msg="Current password is incorrect",
+                is_reset_flow=is_reset_flow
+            )
+
+    # אם כל הבדיקות בסדר נשנה את הסיסמא ונמחק את הטוקן היחודי
     ok = UpdateUserPassword(conn, email, new_pwd)
-    if ok:
+    if ok and is_reset_flow:
         DeleteResetToken(conn, email)
 
     CloseDBConnection(conn)
 
     if not ok:
-        return render_template("change_password.html", error_msg="Failed to update password")
+        return render_template(
+            "change_password.html",
+            error_msg="Failed to update password",
+            is_reset_flow=is_reset_flow
+        )
 
+    # ניקוי session
     session.pop("reset_email", None)
     session.pop("user_email", None)
     return redirect(url_for("login"))
+
 
 
 
