@@ -17,6 +17,8 @@ from DB_MANAGMENT import (
     ListCustomers,
     GetUserPassword,
     UpdateUserPassword,
+    hash_password,
+    verify_password,
 )
 
 
@@ -69,7 +71,7 @@ def login():
         if db_pwd is None: # בדיקה אם המשתמש קיים
             return render_template("login.html", error_msg="User not found")
 
-        if pwd != db_pwd: # בדיקה שהסיסמא נכונה
+        if not verify_password(pwd, db_pwd): # בדיקה שהסיסמא נכונה
             return render_template("login.html", error_msg="Wrong password")
 
         session.pop("reset_email", None)
@@ -177,11 +179,12 @@ def change_password():
     
     # אם זה שינוי סיסמה "רגיל" (לא איפוס) -> חייבים לאמת סיסמה נוכחית
     if session.get("reset_email") is None:
-        if current_pwd != db_pwd:
+        if not verify_password(current_pwd, db_pwd):
             CloseDBConnection(conn)
             return render_template("change_password.html", error_msg="Current password is incorrect")
 # אם כול הבדיקות בסדר נשנה את הסיסמא ונמחק את הטוקן היחודי
-    ok = UpdateUserPassword(conn, email, new_pwd)
+    hashed_new_pwd = hash_password(new_pwd)
+    ok = UpdateUserPassword(conn, email, hashed_new_pwd)
     if ok:
         DeleteResetToken(conn, email)
 
@@ -245,7 +248,8 @@ def register():
             return render_template("register.html", error_msg="User already exists")
 
         # יצירת משתמש בפועל
-        success = AddUserToDB(conn, fname, lname, email, pwd, dob)
+        hashed_pwd = hash_password(pwd)
+        success = AddUserToDB(conn, fname, lname, email, hashed_pwd, dob)
         CloseDBConnection(conn)
 
         if success:
