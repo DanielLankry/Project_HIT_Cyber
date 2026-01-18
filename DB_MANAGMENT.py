@@ -1,12 +1,30 @@
 import mysql.connector
 from mysql.connector import Error
 from dotenv import load_dotenv
+import hashlib
+import hmac
+import secrets
 import os
 
 load_dotenv()
 MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD")
 MYSQL_USER_ADMIN = os.getenv("MYSQL_USER_ADMIN")
 MYSQL_DB_NAME = os.getenv("MYSQL_DB_NAME")
+
+
+def hash_password(password):
+    salt = secrets.token_hex(16)
+    digest = hmac.new(salt.encode("utf-8"), password.encode("utf-8"), hashlib.sha256).hexdigest()
+    return f"{salt}${digest}"
+
+
+def verify_password(password, stored):
+    if not stored or "$" not in stored:
+        return False
+
+    salt, digest = stored.split("$", 1)
+    calc = hmac.new(salt.encode("utf-8"), password.encode("utf-8"), hashlib.sha256).hexdigest()
+    return hmac.compare_digest(calc, digest)
 
 
 # יוצר חיבור למסד הנתונים לפי פרטי הסביבה ומחזיר חיבור פעיל אם הצליח

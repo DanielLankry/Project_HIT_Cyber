@@ -3,7 +3,6 @@ import secrets
 import os
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, session
-from flask import session, redirect, url_for
 from validator import validate_password_security, validate_email_format, validate_phone_number
 from DB_MANAGMENT import (
     Establish_DB_Connection,
@@ -17,6 +16,8 @@ from DB_MANAGMENT import (
     ListCustomers,
     GetUserPassword,
     UpdateUserPassword,
+    hash_password,
+    verify_password,
 )
 
 
@@ -69,7 +70,7 @@ def login():
         if db_pwd is None: # בדיקה אם המשתמש קיים
             return render_template("login.html", error_msg="User not found")
 
-        if pwd != db_pwd: # בדיקה שהסיסמא נכונה
+        if not verify_password(pwd, db_pwd): # בדיקה שהסיסמא נכונה
             return render_template("login.html", error_msg="Wrong password")
 
         session.pop("reset_email", None)
@@ -199,8 +200,9 @@ def change_password():
         )
 
     # אם זה שינוי סיסמה "רגיל" (לא איפוס) -> חייבים לאמת סיסמה נוכחית
+    # ?? ?? ????? ????? "????" (?? ?????) -> ?????? ???? ????? ??????
     if not is_reset_flow:
-        if current_pwd != db_pwd:
+        if not verify_password(current_pwd, db_pwd):
             CloseDBConnection(conn)
             return render_template(
                 "change_password.html",
@@ -208,9 +210,11 @@ def change_password():
                 is_reset_flow=is_reset_flow
             )
 
-    # אם כל הבדיקות בסדר נשנה את הסיסמא ונמחק את הטוקן היחודי
-    ok = UpdateUserPassword(conn, email, new_pwd)
+    # ?? ??? ??????? ???? ???? ?? ?????? ????? ?? ????? ??????
+    hashed_new_pwd = hash_password(new_pwd)
+    ok = UpdateUserPassword(conn, email, hashed_new_pwd)
     if ok and is_reset_flow:
+        DeleteResetToken(conn, email)
         DeleteResetToken(conn, email)
 
     CloseDBConnection(conn)
@@ -279,7 +283,8 @@ def register():
             return render_template("register.html", error_msg="User already exists")
 
         # יצירת משתמש בפועל
-        success = AddUserToDB(conn, fname, lname, email, pwd, dob)
+        hashed_pwd = hash_password(pwd)
+        success = AddUserToDB(conn, fname, lname, email, hashed_pwd, dob)
         CloseDBConnection(conn)
 
         if success:
