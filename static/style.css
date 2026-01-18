@@ -153,7 +153,8 @@ body {
   margin-bottom: 20px;
 }
 
-.input-group label {
+.input-group label,
+.form-field label {
   display: block;
   margin-bottom: 8px;
   color: var(--text-main);
@@ -165,7 +166,9 @@ body {
   position: relative;
 }
 
-.input-wrap input {
+.input-wrap input,
+.input-group input,
+.form-field input {
   width: 100%;
   padding: 12px 15px;
   border: 1px solid var(--border-color);
@@ -176,7 +179,9 @@ body {
   font-family: inherit;
 }
 
-.input-wrap input:focus {
+.input-wrap input:focus,
+.input-group input:focus,
+.form-field input:focus {
   outline: none;
   border-color: var(--primary-color);
   background-color: #fff;

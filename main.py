@@ -57,7 +57,7 @@ app.secret_key = os.urandom(32)  # מפתח סשן אקראי לשמירת מש�
 
 
 # הגדרות (מגיעות מהקונפיג / קבועים)
-MAX_LOGIN_ATTEMPTS = get_max_login_attempts(default=3)
+MAX_LOGIN_ATTEMPTS = get_max_login_attempts(default=5)
 LOCK_MINUTES = 10
 RESET_CODE_EXP_MINUTES = 10
 RESET_MAX_ATTEMPTS = 5
@@ -91,7 +91,8 @@ def login():
                     CloseDBConnection(conn)
                     return render_template("login.html", error_msg="Account is temporarily locked. Try again later.")
             except Exception:
-                pass
+                CloseDBConnection(conn)
+                return render_template("login.html", error_msg="Account is temporarily locked. Try again later.")
 
         db_pwd = GetUserPassword(conn, email)
         if db_pwd is None:
