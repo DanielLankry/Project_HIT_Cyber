@@ -67,7 +67,7 @@ def login():
         db_pwd = GetUserPassword(conn, email) 
         CloseDBConnection(conn)
 
-        if db_pwd is None: # בדיקה אם המשתמש קיים
+        if db_pwd is None: # בדיקה אם למשתמש יש סיסמא
             return render_template("login.html", error_msg="User not found")
 
         if not verify_password(pwd, db_pwd): # בדיקה שהסיסמא נכונה
@@ -200,7 +200,7 @@ def change_password():
         )
 
     # אם זה שינוי סיסמה "רגיל" (לא איפוס) -> חייבים לאמת סיסמה נוכחית
-    # ?? ?? ????? ????? "????" (?? ?????) -> ?????? ???? ????? ??????
+   
     if not is_reset_flow:
         if not verify_password(current_pwd, db_pwd):
             CloseDBConnection(conn)
@@ -210,7 +210,7 @@ def change_password():
                 is_reset_flow=is_reset_flow
             )
 
-    # ?? ??? ??????? ???? ???? ?? ?????? ????? ?? ????? ??????
+    
     hashed_new_pwd = hash_password(new_pwd)
     ok = UpdateUserPassword(conn, email, hashed_new_pwd)
     if ok and is_reset_flow:
