@@ -54,8 +54,6 @@ def CheckIfUserExists(conn, email):
 def VulnerableLogin(conn, email, password):
     try:
         cur = conn.cursor(dictionary=True, buffered=True)
-        # תיקון לוגי: הוספנו סוגריים מסביב לכל התנאי
-        # זה עוזר להזרקות לעבוד בצורה חלקה יותר
         query = f"SELECT * FROM users WHERE email='{email}' AND password='{password}'"
         print(f"DEBUG SQL: {query}") 
         cur.execute(query)
@@ -70,7 +68,6 @@ def VulnerableLogin(conn, email, password):
 def AddCustomer(conn, first_name, last_name, email=None, phone=None):
     try:
         cur = conn.cursor()
-        # שימוש בגרש בודד כדי לאפשר XSS עם גרשיים כפולים
         query = f"INSERT INTO customers (first_name, last_name, email, phone) VALUES ('{first_name}', '{last_name}', '{email}', '{phone}')"
         cur.execute(query)
         conn.commit()
