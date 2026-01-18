@@ -117,15 +117,6 @@ def login():
         ResetFailedLogin(conn, email)
         CloseDBConnection(conn)
 
-<<<<<<< HEAD
-=======
-        if db_pwd is None: # בדיקה אם למשתמש יש סיסמא
-            return render_template("login.html", error_msg="User not found")
-
-        if not verify_password(pwd, db_pwd): # בדיקה שהסיסמא נכונה
-            return render_template("login.html", error_msg="Wrong password")
-
->>>>>>> 164cb6254c69932d835530d08364bb20459e0150
         session.pop("reset_email", None)
         session["user_email"] = email
         return redirect(url_for("dashboard"))  # העברה למסך הראשי
@@ -243,12 +234,7 @@ def change_password():
         CloseDBConnection(conn)
         return render_template("change_password.html", error_msg="User not found", is_reset_flow=is_reset_flow)
 
-<<<<<<< HEAD
     # אם זה שינוי סיסמה רגיל -> חייבים לאמת סיסמה נוכחית
-=======
-    # אם זה שינוי סיסמה "רגיל" (לא איפוס) -> חייבים לאמת סיסמה נוכחית
-   
->>>>>>> 164cb6254c69932d835530d08364bb20459e0150
     if not is_reset_flow:
         if not verify_password(current_pwd, db_pwd):
             CloseDBConnection(conn)
