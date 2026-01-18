@@ -2,11 +2,24 @@ import configparser
 import os
 import re
 
-#Validate password according to password_config.ini rules.
-def validate_password_security(password):
+# קורא את קובץ הקונפיגורציה לפי נתיב נכון
+def _load_config():
     config = configparser.ConfigParser()
-    config.read("password_config.ini")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    config.read(os.path.join(base_dir, "password_config.ini"))
+    return config
 
+# מחזיר את מספר ניסיונות ההתחברות המקסימלי מהקונפיג
+def get_max_login_attempts(default=3):
+    config = _load_config()
+    try:
+        return int(config["PASSWORD"].get("MAX_LOGIN_ATTEMPTS", str(default)))
+    except Exception:
+        return default
+
+# Validate password according to password_config.ini rules.
+def validate_password_security(password):
+    config = _load_config()
     settings = config["PASSWORD"]
 
     min_len = int(settings.get("MIN_LENGTH", 10))
@@ -31,14 +44,18 @@ def validate_password_security(password):
 
     # Blacklist dictionary
     dict_file = settings.get("DICTIONARY_FILE")
-    if dict_file and os.path.exists(dict_file):
-        try:
-            with open(dict_file, "r", encoding="utf-8") as f:
-                bad = {line.strip().lower() for line in f}
-            if password.lower() in bad:
-                return "Password is too common."
-        except Exception as e:
-            print(f"Warning: could not read dictionary file: {e}")
+    if dict_file:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        dict_path = os.path.join(base_dir, dict_file)
+
+        if os.path.exists(dict_path):
+            try:
+                with open(dict_path, "r", encoding="utf-8") as f:
+                    bad = {line.strip().lower() for line in f}
+                if password.lower() in bad:
+                    return "Password is too common."
+            except Exception as e:
+                print(f"Warning: could not read dictionary file: {e}")
 
     return None  # valid
 
@@ -54,7 +71,7 @@ def validate_email_format(email):
 #Phone is optional. If provided: exactly 10 digits, digits only.
 def validate_phone_number(phone):
     if not phone or not phone.strip():
-        return None 
+        return None
 
     phone = phone.strip()
 
