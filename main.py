@@ -118,7 +118,7 @@ def login():
         CloseDBConnection(conn)
 
         session.pop("reset_email", None)
-        session["user_email"] = email
+        session["user_email"] = email # שומר שבסשן הזה ביוזר של המייל הזה מחובר
         return redirect(url_for("dashboard"))  # העברה למסך הראשי
 
     return render_template("login.html")

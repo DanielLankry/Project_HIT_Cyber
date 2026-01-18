@@ -43,16 +43,21 @@ def validate_password_security(password):
             return "Password must contain at least one special character (@ or !)."
 
     # Blacklist dictionary
-    dict_file = settings.get("DICTIONARY_FILE")
+    # 1. בדיקת קיימות של הקובץ
+    # 2. בניית נתיב מלא לקובץ
+    # 3. בדיקה שיש קובץ בנתיב ותחילת בדיקה
+    # 4. קריאת הקובץ והכנת רשימת סיסמאות אסורות מהקובץ
+    # 5. בדיקת סיסמא שנשלחה מול רשימת סיסמאות מסעיף 4
+    dict_file = settings.get("DICTIONARY_FILE") # קבלת נתיב הקובץ והשם שלו
     if dict_file:
         base_dir = os.path.dirname(os.path.abspath(__file__))
         dict_path = os.path.join(base_dir, dict_file)
 
-        if os.path.exists(dict_path):
+        if os.path.exists(dict_path): # קריאה של הקובץ לאחר בדיקה
             try:
                 with open(dict_path, "r", encoding="utf-8") as f:
-                    bad = {line.strip().lower() for line in f}
-                if password.lower() in bad:
+                    bad = {line.strip().lower() for line in f} # בניית רשימת סיסמאות אסורות
+                if password.lower() in bad: # בדיקת הסיסמא שנשלחה לפונקציה
                     return "Password is too common."
             except Exception as e:
                 print(f"Warning: could not read dictionary file: {e}")
@@ -63,7 +68,7 @@ def validate_password_security(password):
 def validate_email_format(email):
     if not email:
         return "Email is required."
-    pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+    pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$" # ביטוי רגולרי שמגדיר את מבנה של כתובת מייל חוקית
     if not re.match(pattern, email):
         return "Invalid email format (example: name@example.com)."
     return None
