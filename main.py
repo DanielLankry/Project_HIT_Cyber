@@ -32,7 +32,6 @@ from DB_MANAGMENT import (
     LockUser,
 )
 
-
 # =========================
 # Flask mini tutorial
 # =========================
@@ -40,7 +39,7 @@ from DB_MANAGMENT import (
 # Flask(__name__)      -> יוצר את אפליקציית השרת
 # app.secret_key      -> מפתח לחתימה על session (זיהוי משתמש)
 
-# @app.route("שם הפונקציה שרוצים שתפעל")     -> מחבר כתובת לפונקציה - כול שורה כזאת יכולה לבצע קריאה לפונקציה אחת בלבד
+# @app.route("שם הפונקציה שרוצים שתפעל")     -> מחבר כתובת לפונקציה
 # methods             -> GET = צפייה, POST = שליחת טופס
 
 # request             -> נתוני הבקשה מהמשתמש
@@ -99,10 +98,11 @@ def login():
             CloseDBConnection(conn)
             return render_template("login.html", error_msg="Invalid email or password")
 
-        if not verify_password(pwd, db_pwd):  # בדיקה שהסיסמא נכונה
+        # בדיקה שהסיסמא נכונה
+        if not verify_password(pwd, db_pwd):
             IncrementFailedLogin(conn, email)
 
-            # אם עברנו את מספר הניסיונות - נועל ומחזיר הודעת נעילה כבר עכשיו
+            # אם עברנו את מספר הניסיונות - נועל ומחזיר הודעת נעילה
             state2 = GetLoginState(conn, email)
             failed = int((state2 or {}).get("failed_login_count", 0))
             if failed >= MAX_LOGIN_ATTEMPTS:
@@ -117,21 +117,11 @@ def login():
         ResetFailedLogin(conn, email)
         CloseDBConnection(conn)
 
-<<<<<<< HEAD
-=======
-        if db_pwd is None: # בדיקה אם למשתמש יש סיסמא
-            return render_template("login.html", error_msg="User not found")
-
-        if not verify_password(pwd, db_pwd): # בדיקה שהסיסמא נכונה
-            return render_template("login.html", error_msg="Wrong password")
-
->>>>>>> 164cb6254c69932d835530d08364bb20459e0150
         session.pop("reset_email", None)
         session["user_email"] = email
         return redirect(url_for("dashboard"))  # העברה למסך הראשי
 
     return render_template("login.html")
-
 
 
 @app.route("/forgot_password", methods=["GET", "POST"])
@@ -144,11 +134,13 @@ def forgot_password():
         if not conn:
             return render_template("forgot_password.html", error_msg="connection error")
 
+        # כאן אפשר להחליט אם להחזיר הודעה אחידה (כמו בלוגין).
+        # כרגע נשאר פשוט וברור:
         if not CheckIfUserExists(conn, email):
             CloseDBConnection(conn)
             return render_template("forgot_password.html", error_msg="User not found")
 
-        random_value = secrets.token_hex(16)  # יצירת ערך אקראי חזק (קריפטוגרפית)
+        random_value = secrets.token_hex(16)  # יצירת ערך אקראי חזק
         token_sha1 = hashlib.sha1(random_value.encode("utf-8")).hexdigest()  # יצירת קוד SHA-1 לפי הנחיות
         expires_at = datetime.now() + timedelta(minutes=RESET_CODE_EXP_MINUTES)  # תוקף לקוד
 
@@ -170,7 +162,6 @@ def verify_reset_code():
         email = request.args.get("email", "").strip().lower()
         return render_template("verify_reset_code.html", email=email)
 
-    # POST: המשתמש שלח את הטופס עם email + code
     email = request.form.get("email", "").strip().lower()
     code = request.form.get("code", "").strip()
 
@@ -212,11 +203,9 @@ def verify_reset_code():
 def change_password():
     is_reset_flow = session.get("reset_email") is not None
 
-    # GET: הצגת המסך
     if request.method == "GET":
         return render_template("change_password.html", is_reset_flow=is_reset_flow)
 
-    # POST: קריאת שדות מהטופס
     current_pwd = request.form.get("currentPassword", "")
     new_pwd = request.form.get("newPassword", "")
     confirm_pwd = request.form.get("confirmPassword", "")
@@ -225,11 +214,9 @@ def change_password():
     if not email:
         return redirect(url_for("login"))
 
-    # בדיקה שהסיסמאות החדשות תואמות
     if new_pwd != confirm_pwd:
         return render_template("change_password.html", error_msg="Passwords do not match", is_reset_flow=is_reset_flow)
 
-    # בדיקת מדיניות סיסמה
     error = validate_password_security(new_pwd)
     if error:
         return render_template("change_password.html", error_msg=error, is_reset_flow=is_reset_flow)
@@ -243,21 +230,12 @@ def change_password():
         CloseDBConnection(conn)
         return render_template("change_password.html", error_msg="User not found", is_reset_flow=is_reset_flow)
 
-<<<<<<< HEAD
     # אם זה שינוי סיסמה רגיל -> חייבים לאמת סיסמה נוכחית
-=======
-    # אם זה שינוי סיסמה "רגיל" (לא איפוס) -> חייבים לאמת סיסמה נוכחית
-   
->>>>>>> 164cb6254c69932d835530d08364bb20459e0150
     if not is_reset_flow:
         if not verify_password(current_pwd, db_pwd):
             CloseDBConnection(conn)
             return render_template("change_password.html", error_msg="Current password is incorrect", is_reset_flow=is_reset_flow)
 
-<<<<<<< HEAD
-=======
-    
->>>>>>> 164cb6254c69932d835530d08364bb20459e0150
     hashed_new_pwd = hash_password(new_pwd)
     ok = UpdateUserPassword(conn, email, hashed_new_pwd)
 
@@ -269,7 +247,6 @@ def change_password():
     if not ok:
         return render_template("change_password.html", error_msg="Failed to update password", is_reset_flow=is_reset_flow)
 
-    # ניקוי session
     session.pop("reset_email", None)
     session.pop("user_email", None)
     return redirect(url_for("login"))
@@ -299,31 +276,26 @@ def register():
         if not conn:
             return render_template("register.html", error_msg="Connection Error")
 
-        # קריאת נתונים מהטופס
         fname = request.form.get("first_name", "")
         lname = request.form.get("last_name", "")
         email = request.form.get("email", "").strip().lower()
         pwd = request.form.get("password", "")
         dob = request.form.get("date_of_birth", "")
 
-        # בדיקת תקינות אימייל
         error = validate_email_format(email)
         if error:
             CloseDBConnection(conn)
             return render_template("register.html", error_msg=error)
 
-        # בדיקת חוזק סיסמא
         error = validate_password_security(pwd)
         if error:
             CloseDBConnection(conn)
             return render_template("register.html", error_msg=error)
 
-        # בדיקה אם המשתמש קיים כבר
         if CheckIfUserExists(conn, email):
             CloseDBConnection(conn)
             return render_template("register.html", error_msg="User already exists")
 
-        # יצירת משתמש בפועל
         hashed_pwd = hash_password(pwd)
         success = AddUserToDB(conn, fname, lname, email, hashed_pwd, dob)
         CloseDBConnection(conn)
@@ -357,7 +329,6 @@ def add_customer():
                 phone=phone
             )
 
-        # בדיקת תקינות אימייל של הלקוח
         if email_cust:
             error = validate_email_format(email_cust)
             if error:
@@ -370,7 +341,6 @@ def add_customer():
                     phone=phone
                 )
 
-        # בדיקת תקינות מספר טלפון
         error = validate_phone_number(phone)
         if error:
             return render_template(
@@ -398,15 +368,15 @@ def add_customer():
 
         if success:
             return redirect(url_for("dashboard"))
-        else:
-            return render_template(
-                "add_customer_form.html",
-                error_msg="Failed to add customer",
-                first_name=first_name,
-                last_name=last_name,
-                email=email_cust,
-                phone=phone
-            )
+
+        return render_template(
+            "add_customer_form.html",
+            error_msg="Failed to add customer",
+            first_name=first_name,
+            last_name=last_name,
+            email=email_cust,
+            phone=phone
+        )
 
     return render_template("add_customer_form.html")
 
