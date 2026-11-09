@@ -1,9 +1,0 @@
-{
-  "schema_version": 1,
-  "repository": "DanielLankry/Project_HIT_Cyber",
-  "request_id": "security-cleanup-20261109-Project_HIT_Cyber-01",
-  "expected_refs": {
-    "refs/heads/main": "4557742bd9eca29af4f5963171601618c0f5b92c",
-    "refs/heads/vulnerable_version": "6228a786cd9e3c4cddda541076bead7bc88aeae0"
-  }
-}
