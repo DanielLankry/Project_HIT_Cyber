@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "repository": "DanielLankry/Project_HIT_Cyber",
+  "target_ref": "refs/heads/main",
+  "sources": [
+    {
+      "id": "historical-flask-session-key",
+      "commit": "68ff12b4bdb009f9d8050b7c57b854a6304b517e",
+      "path": "main.py",
+      "pattern": "(?m)^app\\.secret_key\\s*=\\s*[\"']([^\"'\\r\\n]+)[\"']",
+      "min_length": 16,
+      "replacement": "REMOVED_SESSION_SECRET"
+    }
+  ],
+  "renames": []
+}
